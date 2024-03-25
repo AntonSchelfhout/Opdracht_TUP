@@ -50,7 +50,9 @@ public class BranchAndBound {
 
             // Branch and bound to next match
             boolean res = branchAndBound(matchIndex+1);  
-            if(res) return true;
+            if(res){
+                return true;
+            }
             
             // Rollback changes
             match.umpire = null;

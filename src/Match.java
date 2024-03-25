@@ -14,7 +14,7 @@ public class Match {
         this.homeTeam = homeTeam;
         this.outTeam = outTeam;
 
-        feasibleUmpires = Main.umpires;
+        feasibleUmpires = new ArrayList<>(Main.umpires);
     }
 
     public boolean isEmptyAfterRemove(Umpire u){

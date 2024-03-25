@@ -20,10 +20,14 @@ public class Main {
         bb.branchAndBound(0);
 
         // Print output
+        printOutput();
+    }
+
+    public static void printOutput() {
         for(Round r: rounds){
             System.out.println("Round " + r.index);
             for(Match m: r.matches){
-                System.out.println("\t* ("+ m.homeTeam.teamId + " - " + m.outTeam .teamId+") => " + m.umpire.id);
+                System.out.println("\t* ("+ m.homeTeam.teamId + " - " + m.outTeam .teamId+") => " + m.umpire);
             }
         }
     }
@@ -73,6 +77,12 @@ public class Main {
             teams.add(t);
         }
 
+        // Create all the umpires
+        for(int i = 0; i < nTeams / 2; i++){
+            Umpire u = new Umpire(i);
+            umpires.add(u);
+        }
+
         // Read all the rounds/matches
         matches = new ArrayList<>();
         while(sc.hasNextLine()) {
@@ -100,12 +110,6 @@ public class Main {
                 }
                 break;
             }
-        }
-
-        // Create all the umpires
-        for(int i = 0; i < nTeams / 2; i++){
-            Umpire u = new Umpire(i);
-            umpires.add(u);
         }
 
         //Debug print the rounds
