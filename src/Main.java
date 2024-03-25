@@ -92,3 +92,4 @@ public class Main {
         // Now the variables nTeams, dist, and opponents hold your data
     }
 }
+
