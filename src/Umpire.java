@@ -15,6 +15,7 @@ public class Umpire {
         historyFeasibleMatches = new ArrayList<>(Main.nRounds);
     }
 
+    // Homelocatie
     public boolean isFeasibleC1(Match m) {
         if (m.round-Main.q1 < 0) return true;
 
@@ -27,6 +28,23 @@ public class Umpire {
         return true;
     }
 
+
+    public boolean isFeasibleC1_2(Match m) {
+        int index = m.round - 1;
+
+        while (index >= 0 && index >= m.round - Main.q1) {
+            if (assignedMatches.get(index).homeTeam == m.homeTeam) {
+                return false;
+            }
+            index--;
+        }
+        return true;
+    }
+
+
+
+
+    // Teams
     public boolean isFeasibleC2(Match m) {
         // in the beginning we can always allow
         if (m.round-Main.q2 < 0) return true;
@@ -49,6 +67,7 @@ public class Umpire {
 
     public void unAssignMatch(Match m) {
         assignedMatches.remove(m);
+        m.isAsigned = false;
         BranchAndBound.currentDistance -= Main.dist[m.homeTeam.teamId][m.outTeam.teamId];
     }
 

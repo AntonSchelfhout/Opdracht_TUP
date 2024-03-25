@@ -1,8 +1,8 @@
 import java.io.*;
 import java.util.*;
 public class Main {
-    static int q1;
-    static int q2;
+    static int q1 = 2;
+    static int q2 = 4;
     static int n;
     static int nTeams;
     static int nRounds;
@@ -88,6 +88,14 @@ public class Main {
         }
 
         sc.close();
+
+        BranchAndBound program = new BranchAndBound();
+        program.branchAndBound(0, 0);
+
+        for (Umpire umpire: umpires) {
+            System.out.println("assignments for umpire " + umpire.id);
+            System.out.println(umpire.assignedMatchesToString());
+        }
 
         // Now the variables nTeams, dist, and opponents hold your data
     }
