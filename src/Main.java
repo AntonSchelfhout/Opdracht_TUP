@@ -75,7 +75,7 @@ public class Main {
 
 
 
-        for(int i = 0; i < nTeams; i++){
+        for(int i = 0; i < n; i++){
             Umpire u = new Umpire(i);
             umpires.add(u);
         }

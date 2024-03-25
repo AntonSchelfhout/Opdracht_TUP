@@ -16,26 +16,34 @@ public class Umpire {
     }
 
     public boolean isFeasibleC1(Match m) {
+        if (m.round-Main.q1 < 0) return true;
 
-        return false;
+        // if m contains the same teams as the previously assigned matches, don't allow
+        for (int i = m.round-1; i > m.round - Main.q1; i--) {
+            if (assignedMatches.get(i).homeTeam == m.homeTeam) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public boolean isFeasibleC2(Match m) {
         // in the beginning we can always allow
-        if (m.round-Main.q2 <= 0) return true;
+        if (m.round-Main.q2 < 0) return true;
 
         // if m contains the same teams as the previously assigned matches, don't allow
-        for (int i = m.round; i < m.round - Main.q2; i--) {
+        for (int i = m.round-1; i > m.round - Main.q2; i--) {
             if (assignedMatches.get(i).containsTeamsOfRound(m)) {
                 return false;
             }
         }
-        return false;
+        return true;
     }
 
     // Assign a match to this umpire
     public void assignMatch(Match m) {
         assignedMatches.add(m);
+        m.isAsigned = true;
         BranchAndBound.currentDistance += Main.dist[m.homeTeam.teamId][m.outTeam.teamId];
     }
 
@@ -71,5 +79,16 @@ public class Umpire {
                 ", feasibleMatches=" + feasibleMatches +
                 ", historyFeasibleMatches=" + historyFeasibleMatches +
                 '}';
+    }
+
+    public String assignedMatchesToString() {
+
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < assignedMatches.size(); i++) {
+            sb.append("Round ").append(i).append(": ").append(assignedMatches.get(i).toString()).append(" \n");
+        }
+        sb.append("\n");
+        return sb.toString();
     }
 }
