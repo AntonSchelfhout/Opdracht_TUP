@@ -5,14 +5,16 @@ public class Match {
     public int round;
     public Team homeTeam;
     public Team outTeam;
+    public int index;
 
     public Umpire umpire;
     public List<Umpire> feasibleUmpires = new ArrayList<>();
 
-    public Match(int round, Team homeTeam, Team outTeam){
+    public Match(int round, Team homeTeam, Team outTeam, int index){
         this.round = round;
         this.homeTeam = homeTeam;
         this.outTeam = outTeam;
+        this.index = index;
 
         feasibleUmpires = new ArrayList<>(Main.umpires);
     }

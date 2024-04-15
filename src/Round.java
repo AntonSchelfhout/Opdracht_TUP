@@ -23,11 +23,21 @@ public class Round {
         }
     }
 
-    public boolean checkFirstConstraint(Umpire u, Match m){
-        Match loc = locations.get(m.homeTeam);
+    public boolean checkSameRound(Umpire u, Match m){
         boolean res = true;
-        if(loc != null){
-            res = !loc.isEmptyAfterRemove(u);
+        for(Match match : matches){
+            if(!match.equals(m) && match.index > m.index){
+                res &= !match.isEmptyAfterRemove(u);
+            }
+        }
+        return res;
+    }
+
+    public boolean checkFirstConstraint(Umpire u, Match m){
+        Match matchWithSameLocation = locations.get(m.homeTeam);
+        boolean res = true;
+        if(matchWithSameLocation != null){
+            res = !matchWithSameLocation.isEmptyAfterRemove(u);
         }
         return res;
     }
@@ -44,12 +54,24 @@ public class Round {
         return res;
     }
 
+    public HashSet<Match> adjustSameRound(Umpire u, Match m){
+        HashSet<Match> res = new HashSet<>();
+        for(Match match : matches){
+            if(!match.equals(m) && match.index > m.index){
+                if(match.removeUmpire(u)){
+                    res.add(match);
+                }
+            }
+        }
+        return res;
+    }
+
     public HashSet<Match> adjustFirstConstraint(Umpire u, Match m){
-        Match loc = locations.get(m.homeTeam);
-        if(loc != null){
-            if(loc.removeUmpire(u)){
+        Match matchWithSameLocation = locations.get(m.homeTeam);
+        if(matchWithSameLocation != null){
+            if(matchWithSameLocation.removeUmpire(u)){
                 return new HashSet<Match>(){{
-                    add(loc);
+                    add(matchWithSameLocation);
                 }};
             }
         }

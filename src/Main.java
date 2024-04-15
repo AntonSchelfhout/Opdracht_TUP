@@ -1,8 +1,9 @@
 import java.io.*;
 import java.util.*;
 public class Main {
-    static int q1 = 2;
-    static int q2 = 3;
+    // https://benchmark.gent.cs.kuleuven.be/tup/en/results/
+    static int q1 = 5;
+    static int q2 = 2;
     static int n;
     static int nTeams;
     static int nRounds;
@@ -13,17 +14,26 @@ public class Main {
     static List<Umpire> umpires = new ArrayList<>();
 
     public static void main(String[] args) throws FileNotFoundException {
-        readFile("umps8");
+        readFile("umps10");
+
+        // CALCULATE ALL DINSTANCES
+
+        // SORT NODES ON DISTANCE
+
+        // FIX EERSTE RONDE
 
         // Branch and bound
         BranchAndBound bb = new BranchAndBound();
         bb.branchAndBound(0);
 
         // Print output
-        printOutput();
+        printOutput(bb);
     }
 
-    public static void printOutput() {
+    public static void printOutput(BranchAndBound branchAndBound) {
+        System.out.println("--------------------");
+        System.out.println(branchAndBound.currentDistance);
+        System.out.println("--------------------");
         for(Round r: rounds){
             System.out.println("Round " + r.index);
             for(Match m: r.matches){
@@ -61,15 +71,6 @@ public class Main {
             }
         }
 
-        // Debug print the dist matrix
-        // for (int i=0; i<nTeams;i++) {
-        //     for (int j=0; j<nTeams; j++) {
-        //         System.out.printf("%d, ", dist[i][j]);
-        //     }
-        //     System.out.println(" ");
-        // }
-
-
         // Create all the teams
         List<Team> teams = new ArrayList<>();
         for (int i=0; i<nTeams; i++) {
@@ -89,23 +90,23 @@ public class Main {
             String line = sc.nextLine();
             if(line.contains("opponents=[")){
 
-                for(int ronde = 0; ronde < nRounds; ronde++) {
+                for(int round = 0; round < nRounds; round++) {
                     // Get the round input line and trim all useless characters
                     String[] roundLine = sc.nextLine().replace("[","").replace("]","").split("\\s+");
 
                     // Create a list of matches for this round (skip the returning negative matches)
                     List<Match> roundMatches = new ArrayList<>();
-                    for (int i = 1; i < roundLine.length; i++) {
+                    for (int i = 0; i < roundLine.length; i++) {
                         int o = Integer.parseInt(roundLine[i]);
                         if(o < 0) continue;
 
-                        Match m = new Match(ronde, teams.get(i-1), teams.get(Math.abs(o) - 1));
+                        Match m = new Match(round, teams.get(i), teams.get(o - 1), i);
                         roundMatches.add(m);
                         matches.add(m);
                     }
                     
                     // Create a round object and add it to the list of rounds
-                    Round r = new Round(ronde, roundMatches);
+                    Round r = new Round(round, roundMatches);
                     rounds.add(r);
                 }
                 break;
@@ -113,9 +114,9 @@ public class Main {
         }
 
         //Debug print the rounds
-        // for (Round r: rounds) {
-        //         System.out.println(r.toString());
-        // }
+        for (Round r: rounds) {
+                System.out.println(r.toString());
+        }
 
         sc.close();
     }
