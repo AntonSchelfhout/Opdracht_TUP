@@ -12,11 +12,13 @@ public class Main {
     static List<Round> rounds = new ArrayList<>();
     static List<Match> matches = new ArrayList<>();
     static List<Umpire> umpires = new ArrayList<>();
+    static List<Team> teams = new ArrayList<>();
 
     public static void main(String[] args) throws FileNotFoundException {
-        readFile("umps10");
 
-        // CALCULATE ALL DINSTANCES
+        readFile("umps8");
+
+        long startTime = System.currentTimeMillis();
 
         // SORT NODES ON DISTANCE
 
@@ -26,8 +28,11 @@ public class Main {
         BranchAndBound bb = new BranchAndBound();
         bb.branchAndBound(0);
 
-        // Print output
-        printOutput(bb);
+        long endTime = System.currentTimeMillis();
+        long totalTime = endTime - startTime;
+        System.out.println("Total runtime: " + totalTime + " milliseconds");
+
+
     }
 
     public static void printOutput(BranchAndBound branchAndBound) {
@@ -35,44 +40,27 @@ public class Main {
         System.out.println(branchAndBound.currentDistance);
         System.out.println("--------------------");
         for(Round r: rounds){
-            System.out.println("Round " + r.index);
-            for(Match m: r.matches){
-                System.out.println("\t* ("+ m.homeTeam.teamId + " - " + m.outTeam .teamId+") => " + m.umpire);
-            }
+            // System.out.println("Round " + r.index);
+            // for(Match m: r.matches){
+            //     System.out.println("\t* ("+ m.homeTeam.teamId + " - " + m.outTeam .teamId+") => " + m.umpire);
+            // }
         }
     }
 
     public static void readFile(String file) throws FileNotFoundException{
         Scanner sc = new Scanner(new File("Input/" + file + ".txt"));
-        
-        // Read the nTeams line
-        while(sc.hasNextLine()){
-            String line = sc.nextLine();
-            if(line.trim().contains("nTeams")){
-                nTeams = Integer.parseInt(line.split("=")[1].trim().replace(";",""));
-                n = nTeams/2;
-                nRounds = 2*nTeams-2;
-                dist = new int[nTeams][nTeams];
-                break;
-            }
-        }
 
-        // Read the dist matrix
-        while(sc.hasNextLine()){
-            String line = sc.nextLine();
-            if(line.contains("dist= [")){
-                for(int i = 0; i < nTeams; i++) {
-                    String[] roundLine = sc.nextLine().replace("[","").replace("]","").split("\\s+");
-                    for(int j = 1; j <= nTeams; j++) {
-                        dist[i][j-1] = Integer.parseInt(roundLine[j]);
-                    }
-                }
-                break;
-            }
-        }
+        String line = removePadding(sc, "nTeams");
+        assert line != null;
+        int nTeams = Integer.parseInt(line.split("=")[1].split(";")[0]);
+
+        removePadding(sc, "dist");
+        dist = parseArray(sc, nTeams);
+
+        removePadding(sc, "opponents");
+        int[][] opponents = parseArray(sc, (nTeams - 1) * 2);
 
         // Create all the teams
-        List<Team> teams = new ArrayList<>();
         for (int i=0; i<nTeams; i++) {
             Team t = new Team(i);
             teams.add(t);
@@ -86,39 +74,50 @@ public class Main {
 
         // Read all the rounds/matches
         matches = new ArrayList<>();
-        while(sc.hasNextLine()) {
-            String line = sc.nextLine();
-            if(line.contains("opponents=[")){
+        int round = 0;
+        for(int[] opponentsRound: opponents) {
+            // Create a list of matches for this round (skip the returning negative matches)
+            List<Match> roundMatches = new ArrayList<>();
+            
+            for(int i = 0; i < opponentsRound.length; i++) {
+                int o = opponentsRound[i];
+                if(o < 0) continue;
 
-                for(int round = 0; round < nRounds; round++) {
-                    // Get the round input line and trim all useless characters
-                    String[] roundLine = sc.nextLine().replace("[","").replace("]","").split("\\s+");
-
-                    // Create a list of matches for this round (skip the returning negative matches)
-                    List<Match> roundMatches = new ArrayList<>();
-                    for (int i = 0; i < roundLine.length; i++) {
-                        int o = Integer.parseInt(roundLine[i]);
-                        if(o < 0) continue;
-
-                        Match m = new Match(round, teams.get(i), teams.get(o - 1), i);
-                        roundMatches.add(m);
-                        matches.add(m);
-                    }
-                    
-                    // Create a round object and add it to the list of rounds
-                    Round r = new Round(round, roundMatches);
-                    rounds.add(r);
-                }
-                break;
+                Match m = new Match(round, teams.get(i), teams.get(o - 1), i);
+                roundMatches.add(m);
+                matches.add(m);
             }
+            
+            // Create a round object and add it to the list of rounds
+            Round r = new Round(round, roundMatches);
+            rounds.add(r);
+            round++;
         }
-
+        
         //Debug print the rounds
         for (Round r: rounds) {
-                System.out.println(r.toString());
+            System.out.println(r.toString());
         }
 
         sc.close();
     }
-}
 
+    private static int[][] parseArray(Scanner scanner, int nTeams) {
+        int[][] array = new int[nTeams][nTeams];
+        for (int i = 0; i < nTeams; i++) {
+            String line = scanner.nextLine().split("\\[")[1].split("]")[0];
+            array[i] = Arrays.stream(line.trim().split("\\s+" )).mapToInt(Integer::parseInt).toArray();
+        }
+        return array;
+    }
+
+    private static String removePadding(Scanner scanner, String end) {
+        while (scanner.hasNextLine()) {
+            String line = scanner.nextLine();
+            if (line.contains(end)) {
+                return line;
+            }
+        }
+        return null;
+    }
+}
