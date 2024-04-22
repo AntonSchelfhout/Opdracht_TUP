@@ -4,11 +4,21 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class BranchAndBound {
+public class BranchAndBound implements Runnable{
     int upperBound = Integer.MAX_VALUE;
     int currentDistance = 0;
+    LowerBound lowerBound;
 
-    public void branchAndBound(int matchIndex) {
+    public BranchAndBound(LowerBound lowerBoundsThread) {
+        this.lowerBound = lowerBoundsThread;
+    }
+
+    @Override
+    public void run() {
+        branch(0);
+    }
+
+    public void branch(int matchIndex) {
         Match match = Main.matches.get(matchIndex);
         Round round = Main.rounds.get(match.round);
 
@@ -19,7 +29,7 @@ public class BranchAndBound {
             currentDistance += u.addToMatch(match);
 
             // Prune if current distance is already greater than upper bound
-            if (currentDistance >= upperBound) {
+            if (currentDistance + lowerBound.lowerBounds[round.index][] >= upperBound) {
                 match.umpire = null;
                 currentDistance -= u.removeFromMatch();
                 continue umpireLoop;
@@ -28,7 +38,6 @@ public class BranchAndBound {
             // If not all matches are assigned umpires
             Set<Match> adjustedMatches = new HashSet<>();
             if(matchIndex < Main.matches.size()-1){
-                // TODO Every umpire crew should visit the home of every teamat least once
                 // Check constraints
                 if(!round.checkSameRound(u, match)){
                     match.umpire = null;
@@ -75,26 +84,19 @@ public class BranchAndBound {
                 }
 
                 // Branch and bound to next match
-                branchAndBound(matchIndex+1); 
+                branch(matchIndex+1); 
             }  
             else{
                 // If all matches have assigned umpires
 
-                // Check if each umpire visited each team's home
-                // for(Umpire umpire: Main.umpires){
-                //     List<Team> tempTeams = Main.teams;
-                //     for(Match m: u.matches){
-                //         if (tempTeams.contains(m.homeTeam)){
-                //             tempTeams.remove(m.homeTeam);
-                //         }
-                //     }
-                //     if(tempTeams.size() > 0){
-                    //     match.umpire = null;
-                    //     currentDistance -= u.removeFromMatch();
-                    //     continue umpireLoop;
-                //         continue umpireLoop;
-                //     }
-                // }
+                // Check if each umpire visited each team's home -> sum visitedTeams has to be size teams for each umpire
+                for(Umpire umpire: Main.umpires){
+                    if(!umpire.checkAllVisited()) {
+                        match.umpire = null;
+                        currentDistance -= u.removeFromMatch();
+                        continue umpireLoop;
+                    }
+                }
 
                 // Check if current distance is less than upper bound
                 if (currentDistance < upperBound){

@@ -2,7 +2,7 @@ import java.io.*;
 import java.util.*;
 public class Main {
     // https://benchmark.gent.cs.kuleuven.be/tup/en/results/
-    static int q1 = 5;
+    static int q1 = 4;
     static int q2 = 2;
     static int n;
     static int nTeams;
@@ -16,35 +16,43 @@ public class Main {
 
     public static void main(String[] args) throws FileNotFoundException {
 
+        // Read the file
         readFile("umps8");
 
         long startTime = System.currentTimeMillis();
 
-        // SORT NODES ON DISTANCE
+        // Sort nodes on distance
 
-        // FIX EERSTE RONDE
+        // Fix de eerste ronde
+        for (int i = 0; i < rounds.get(0).matches.size(); i++) {
+            umpires.get(i).addToMatch(matches.get(i));
+            matches.get(i).addUmpire(umpires.get(i));
+        }
 
-        // Branch and bound
-        BranchAndBound bb = new BranchAndBound();
-        bb.branchAndBound(0);
+        // Start thread for lowerbounds
+        Thread lowerBounds = new Thread(new LowerBound());
+        lowerBounds.start();
 
+        // Start new thread for branching
+        Thread branching = new Thread(new BranchAndBound(lowerBounds));
+        branching.start();
+
+        // Print finished results
         long endTime = System.currentTimeMillis();
         long totalTime = endTime - startTime;
         System.out.println("Total runtime: " + totalTime + " milliseconds");
-
-
     }
 
     public static void printOutput(BranchAndBound branchAndBound) {
         System.out.println("--------------------");
         System.out.println(branchAndBound.currentDistance);
         System.out.println("--------------------");
-        for(Round r: rounds){
-            // System.out.println("Round " + r.index);
-            // for(Match m: r.matches){
-            //     System.out.println("\t* ("+ m.homeTeam.teamId + " - " + m.outTeam .teamId+") => " + m.umpire);
-            // }
-        }
+        // for(Round r: rounds){
+        //     System.out.println("Round " + r.index);
+        //     for(Match m: r.matches){
+        //         System.out.println("\t* ("+ m.homeTeam.teamId + " - " + m.outTeam .teamId+") => " + m.umpire);
+        //     }
+        // }
     }
 
     public static void readFile(String file) throws FileNotFoundException{
@@ -95,9 +103,9 @@ public class Main {
         }
         
         //Debug print the rounds
-        for (Round r: rounds) {
-            System.out.println(r.toString());
-        }
+        // for (Round r: rounds) {
+        //     System.out.println(r.toString());
+        // }
 
         sc.close();
     }

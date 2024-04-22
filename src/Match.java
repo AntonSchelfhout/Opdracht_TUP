@@ -32,14 +32,14 @@ public class Match {
         return res;
     }
 
-    public boolean homeTeamCanBeReachedByAllUmpires(){
-        for(Umpire u : feasibleUmpires){
-            if(homeTeam.umpiresToVisit.contains(u)){
-                return false;
-            }
-        }
-        return true;
-    }
+    // public boolean homeTeamCanBeReachedByAllUmpires(){
+    //     for(Umpire u : feasibleUmpires){
+    //         if(homeTeam.umpiresToVisit.contains(u)){
+    //             return false;
+    //         }
+    //     }
+    //     return true;
+    // }
 
     public void addUmpire(Umpire u){
         feasibleUmpires.add(u);
