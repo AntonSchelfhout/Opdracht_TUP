@@ -1,13 +1,5 @@
 // HUNGARIAN ALGORITHM
 
-// xasis : matches round R
-// yaxis : matches round R+1
-
-// element (x,y) = distance between hometeam match x and hometeam match y
-
-// find the minimum distance between all the matches
-
-import java.util.Arrays;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -27,17 +19,8 @@ public class HungarianAlgorithm {
     // markers in the matrix
     int[] squareInRow, squareInCol, rowIsCovered, colIsCovered, staredZeroesInRow;
 
-    public HungarianAlgorithm(int[][] matrix) {
-        if (matrix.length != matrix[0].length) {
-            try {
-                throw new IllegalAccessException("The matrix is not square!");
-            } catch (IllegalAccessException ex) {
-                System.err.println(ex);
-                System.exit(1);
-            }
-        }
-
-        this.matrix = matrix;
+    public HungarianAlgorithm(int roundIndex, int nextRoundIndex) {
+        this.matrix = createMatrix(roundIndex, nextRoundIndex);
         squareInRow = new int[matrix.length];       // squareInRow & squareInCol indicate the position
         squareInCol = new int[matrix[0].length];    // of the marked zeroes
 
@@ -84,6 +67,7 @@ public class HungarianAlgorithm {
         }
         return optimalAssignment;
     }
+
 
     /**
      * Check if all columns are covered. If that's the case then the
@@ -291,13 +275,26 @@ public class HungarianAlgorithm {
         Arrays.fill(colIsCovered, 0);
     }
 
-    public int[][] createMatrix(Round r, Round r_plus_one) {
-        int[][] matrix = new int[r.matches.size()][r_plus_one.matches.size()];
-        for (int i = 0; i < r.matches.size(); i++) {
-            for (int j = 0; j < r_plus_one.matches.size(); j++) {
+    public int[][] createMatrix(int roundIndex, int nextRoundIndex) {
+        int[][] matrix = new int[Main.n][Main.n];
+        for (int i = 0; i < Main.n; i++) {
+            for (int j = 0; j < Main.n; j++) {
+                Round r = Main.rounds.get(roundIndex);
+                Round r_plus_one = Main.rounds.get(nextRoundIndex);
                 matrix[i][j] = Main.dist[r.matches.get(i).homeTeam.teamId][r_plus_one.matches.get(j).homeTeam.teamId];
             }
         }
         return matrix;
+    }
+
+    public int getCost() {
+        this.findOptimalAssignment();
+        int cost = 0;
+        for (int i = 0; i < Main.n; i++) {
+            for (int j = 0; j < Main.n; j++) {
+                cost += matrix[i][j];
+            }
+        }
+        return cost;
     }
 }

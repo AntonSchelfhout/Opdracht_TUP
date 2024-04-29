@@ -14,14 +14,12 @@ public class Main {
     static List<Umpire> umpires = new ArrayList<>();
     static List<Team> teams = new ArrayList<>();
 
-    public static void main(String[] args) throws FileNotFoundException {
+    public static void main(String[] args) throws FileNotFoundException, InterruptedException {
 
         // Read the file
         readFile("umps8");
-
-        long startTime = System.currentTimeMillis();
-
         // Sort nodes on distance
+
 
         // Fix de eerste ronde
         for (int i = 0; i < rounds.get(0).matches.size(); i++) {
@@ -30,17 +28,17 @@ public class Main {
         }
 
         // Start thread for lowerbounds
-        Thread lowerBounds = new Thread(new LowerBound());
-        lowerBounds.start();
+        LowerBound lowerBound = new LowerBound();
+        Thread lowerBounds = new Thread(lowerBound);
+        lowerBounds.run();
 
         // Start new thread for branching
-        Thread branching = new Thread(new BranchAndBound(lowerBounds));
-        branching.start();
+        BranchAndBound branchAndBound = new BranchAndBound(q1, q2, lowerBound);
+        Thread branching = new Thread(branchAndBound);
+        branching.run();
 
-        // Print finished results
-        long endTime = System.currentTimeMillis();
-        long totalTime = endTime - startTime;
-        System.out.println("Total runtime: " + totalTime + " milliseconds");
+        // Wait for the threads to finish
+        branching.join();
     }
 
     public static void printOutput(BranchAndBound branchAndBound) {
@@ -61,6 +59,9 @@ public class Main {
         String line = removePadding(sc, "nTeams");
         assert line != null;
         int nTeams = Integer.parseInt(line.split("=")[1].split(";")[0]);
+        n = nTeams / 2;
+        nRounds =4 * n - 2;
+
 
         removePadding(sc, "dist");
         dist = parseArray(sc, nTeams);
