@@ -61,16 +61,9 @@ public class LowerBound implements Runnable{
     public void calculateLowerBounds() {
         // initial lower bounds for all pairs of rounds
         for(int r=Main.nRounds-2; r>=0; r--) {
-            HungarianAlgorithm2 hungarianAlgorithm = new HungarianAlgorithm2();
+            HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm();
             
             int[][] matrix = createMatrix(r);
-            for(int i=0; i< matrix.length ; i++) {
-                for(int j=0; j< matrix[0].length; j++) {
-                    System.out.print(matrix[i][j] + " ");
-                }
-                System.out.println(" ");
-            }
-            System.out.println("                    ");
 
             int[][] result = hungarianAlgorithm.computeAssignments(matrix);
             int afstand = calculateDistance(result, r);
@@ -108,12 +101,13 @@ public class LowerBound implements Runnable{
             }  
         }
 
-        for(int i=0; i<Main.nRounds; i++) {
-            for (int j=0; j<Main.nRounds; j++) {
-                System.out.print(lowerBounds[i][j] + "    ");
-            }
-            System.out.println(" ");
-        }
+        // DEBUG print matrix
+        // for(int i=0; i<Main.nRounds; i++) {
+        //     for (int j=0; j<Main.nRounds; j++) {
+        //         System.out.print(lowerBounds[i][j] + "    ");
+        //     }
+        //     System.out.println(" ");
+        // }
     }
 
     @Override

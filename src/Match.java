@@ -49,6 +49,7 @@ public class Match {
     public String toString() {
         return "Match{" +
                 "round=" + round +
+                ", index=" + index +
                 ", homeTeam=" + homeTeam +
                 ", outTeam=" + outTeam +
                 '}';

@@ -4,6 +4,7 @@ public class Main {
     // https://benchmark.gent.cs.kuleuven.be/tup/en/results/
     static int q1 = 5;
     static int q2 = 2;
+    static String file = "umps10";
     static int n;
     static int nTeams;
     static int nRounds;
@@ -17,9 +18,9 @@ public class Main {
     public static void main(String[] args) throws FileNotFoundException, InterruptedException {
 
         // Read the file
-        readFile("umps10A");
-        // Sort nodes on distance
+        readFile(file);
 
+        // Sort nodes on distance
         long startTime = System.currentTimeMillis();
 
         // Fix de eerste ronde
@@ -45,6 +46,9 @@ public class Main {
         long endTime = System.currentTimeMillis();
         long totalTime = endTime - startTime;
         System.out.println("Total runtime: " + totalTime + " milliseconds");
+
+        // Print the results
+        branchAndBound.feasibilityCheck();
     }
 
     public static void readFile(String file) throws FileNotFoundException {
@@ -52,7 +56,7 @@ public class Main {
 
         String line = removePadding(sc, "nTeams");
         assert line != null;
-        int nTeams = Integer.parseInt(line.split("=")[1].split(";")[0]);
+        nTeams = Integer.parseInt(line.split("=")[1].split(";")[0]);
         n = nTeams / 2;
         nRounds =4 * n - 2;
 
@@ -86,7 +90,7 @@ public class Main {
                 int o = opponentsRound[i];
                 if(o < 0) continue;
 
-                Match m = new Match(round, teams.get(i), teams.get(o - 1), i);
+                Match m = new Match(round, teams.get(i), teams.get(o - 1), roundMatches.size());
                 roundMatches.add(m);
                 matches.add(m);
             }
