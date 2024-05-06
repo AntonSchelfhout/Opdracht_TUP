@@ -2,7 +2,7 @@ import java.io.*;
 import java.util.*;
 public class Main {
     // https://benchmark.gent.cs.kuleuven.be/tup/en/results/
-    static int q1 = 4;
+    static int q1 = 5;
     static int q2 = 2;
     static int n;
     static int nTeams;
@@ -17,7 +17,7 @@ public class Main {
     public static void main(String[] args) throws FileNotFoundException, InterruptedException {
 
         // Read the file
-        readFile("umps8");
+        readFile("umps10A");
         // Sort nodes on distance
 
         long startTime = System.currentTimeMillis();
@@ -29,13 +29,12 @@ public class Main {
         }
 
         // Start thread for lowerbounds
-        
         LowerBound lowerBound = new LowerBound(new ArrayList<>(rounds), new ArrayList<>(matches), new ArrayList<>(umpires), new ArrayList<>(teams));
         Thread lowerBounds = new Thread(lowerBound);
         lowerBounds.run();
 
         // Start new thread for branching
-        BranchAndBound branchAndBound = new BranchAndBound(q1, q2, lowerBound, new ArrayList<>(rounds), new ArrayList<>(matches), new ArrayList<>(umpires), new ArrayList<>(teams), 0);
+        BranchAndBound branchAndBound = new BranchAndBound(q1, q2, lowerBound, new ArrayList<>(rounds), new ArrayList<>(matches), new ArrayList<>(umpires), new ArrayList<>(teams), 0, true);
         Thread branching = new Thread(branchAndBound);
         branching.run();
 
@@ -48,7 +47,7 @@ public class Main {
         System.out.println("Total runtime: " + totalTime + " milliseconds");
     }
 
-    public static void readFile(String file) throws FileNotFoundException{
+    public static void readFile(String file) throws FileNotFoundException {
         Scanner sc = new Scanner(new File("Input/" + file + ".txt"));
 
         String line = removePadding(sc, "nTeams");

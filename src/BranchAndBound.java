@@ -8,6 +8,7 @@ import java.util.Set;
 public class BranchAndBound implements Runnable {
     int q1;
     int q2;
+    boolean checkConstraintAllVisited;
     int upperBound = Integer.MAX_VALUE;
     int currentDistance = 0;
     LowerBound lowerBound;
@@ -19,11 +20,13 @@ public class BranchAndBound implements Runnable {
     List<Umpire> umpires = new ArrayList<>();
     List<Team> teams = new ArrayList<>();
 
-    public BranchAndBound(int q1, int q2, LowerBound lowerBound, List<Round> rounds, List<Match> matches, List<Umpire> umpires, List<Team> teams, int startRound) {
+    public BranchAndBound(int q1, int q2, LowerBound lowerBound, List<Round> rounds, List<Match> matches, List<Umpire> umpires, List<Team> teams, int startRound, boolean checkConstraintAllVisited) {
         this.q1 = q1;
         this.q2 = q2;
         this.lowerBound = lowerBound;
         this.startRound = startRound;
+        this.checkConstraintAllVisited = checkConstraintAllVisited;
+
         
         // Copy the rounds, matches, umpires and teams
         this.rounds = rounds;
@@ -53,7 +56,7 @@ public class BranchAndBound implements Runnable {
             currentDistance += u.addToMatch(match);
 
             // Prune if current distance is already greater than upper bound
-            if (currentDistance + lowerBound.lowerBounds[round.index][Main.nRounds - 1] >= upperBound) {
+            if(currentDistance + lowerBound.lowerBounds[round.index][Main.nRounds - 1] >= upperBound) {
                 match.umpire = null;
                 currentDistance -= u.removeFromMatch();
                 continue umpireLoop;
@@ -114,11 +117,13 @@ public class BranchAndBound implements Runnable {
                 // If all matches have assigned umpires
 
                 // Check if each umpire visited each team's home -> sum visitedTeams has to be size teams for each umpire
-                for(Umpire umpire: umpires){
-                    if(!umpire.checkAllVisited()) {
-                        match.umpire = null;
-                        currentDistance -= u.removeFromMatch();
-                        continue umpireLoop;
+                if (checkConstraintAllVisited) {  
+                    for(Umpire umpire: umpires){
+                        if(!umpire.checkAllVisited()) {
+                            match.umpire = null;
+                            currentDistance -= u.removeFromMatch();
+                            continue umpireLoop;
+                        }
                     }
                 }
 
