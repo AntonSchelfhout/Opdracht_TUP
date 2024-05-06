@@ -20,6 +20,7 @@ public class Main {
         readFile("umps8");
         // Sort nodes on distance
 
+        long startTime = System.currentTimeMillis();
 
         // Fix de eerste ronde
         for (int i = 0; i < rounds.get(0).matches.size(); i++) {
@@ -28,29 +29,23 @@ public class Main {
         }
 
         // Start thread for lowerbounds
-        LowerBound lowerBound = new LowerBound();
+        
+        LowerBound lowerBound = new LowerBound(new ArrayList<>(rounds), new ArrayList<>(matches), new ArrayList<>(umpires), new ArrayList<>(teams));
         Thread lowerBounds = new Thread(lowerBound);
         lowerBounds.run();
 
         // Start new thread for branching
-        BranchAndBound branchAndBound = new BranchAndBound(q1, q2, lowerBound);
+        BranchAndBound branchAndBound = new BranchAndBound(q1, q2, lowerBound, new ArrayList<>(rounds), new ArrayList<>(matches), new ArrayList<>(umpires), new ArrayList<>(teams), 0);
         Thread branching = new Thread(branchAndBound);
         branching.run();
 
         // Wait for the threads to finish
         branching.join();
-    }
 
-    public static void printOutput(BranchAndBound branchAndBound) {
-        System.out.println("--------------------");
-        System.out.println(branchAndBound.currentDistance);
-        System.out.println("--------------------");
-        // for(Round r: rounds){
-        //     System.out.println("Round " + r.index);
-        //     for(Match m: r.matches){
-        //         System.out.println("\t* ("+ m.homeTeam.teamId + " - " + m.outTeam .teamId+") => " + m.umpire);
-        //     }
-        // }
+        // Print finished results
+        long endTime = System.currentTimeMillis();
+        long totalTime = endTime - startTime;
+        System.out.println("Total runtime: " + totalTime + " milliseconds");
     }
 
     public static void readFile(String file) throws FileNotFoundException{
