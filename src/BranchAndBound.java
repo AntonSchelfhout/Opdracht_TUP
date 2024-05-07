@@ -33,7 +33,7 @@ public class BranchAndBound implements Runnable {
         this.checkConstraintAllVisited = checkConstraintAllVisited;
 
         
-        // Copy the rounds, matches, umpires and teams
+        // Copy construct the rounds, matches, umpires and teams
         this.rounds = rounds;
         this.matches = matches;
         this.umpires = umpires;
@@ -48,6 +48,7 @@ public class BranchAndBound implements Runnable {
     public int getTotalDistance() {
         return upperBound;
     }
+    
 
     // TODO aanpassen dat result gereturned wordt
     public void branch(int matchIndex) {
@@ -76,9 +77,7 @@ public class BranchAndBound implements Runnable {
                     currentDistance -= u.removeFromMatch();
                     continue umpireLoop;
                 }
-                for(int i = round.index + 1; i < round.index + q1 - 1; i++){
-                    if(i >= rounds.size()) break;
-
+                for(int i = round.index + 1; i < rounds.size() && i <= round.index + q1 - 1; i++){
                     Round r = rounds.get(i);
                     if(!r.checkFirstConstraint(u, match)){
                         match.umpire = null;
@@ -86,9 +85,7 @@ public class BranchAndBound implements Runnable {
                         continue umpireLoop;
                     }
                 }
-                for(int i = round.index + 1; i < round.index + q2 - 1; i++){
-                    if(i >= rounds.size()) break;
-
+                for(int i = round.index + 1; i < rounds.size() && i <= round.index + q2 - 1; i++){
                     Round r = rounds.get(i);
                     if(!r.checkSecondConstraint(u, match)){
                         match.umpire = null;
@@ -102,16 +99,12 @@ public class BranchAndBound implements Runnable {
                 // Commit changes
                 // remove selected umpire form other matches feasible umpires
                 adjustedMatches = round.adjustSameRound(u, match);
-                for(int i = round.index + 1; i <= round.index + q1 - 1; i++){
-                    if(i >= rounds.size()) break;
-
+                for(int i = round.index + 1; i < rounds.size() && i <= round.index + q1 - 1; i++){
                     Round r = rounds.get(i);
                     HashSet<Match> m = r.adjustFirstConstraint(u, match);
                     adjustedMatches.addAll(m);
                 }
-                for(int i = round.index + 1; i <= round.index + q2 - 1; i++){
-                    if(i >= rounds.size()) break;
-
+                for(int i = round.index + 1; i < rounds.size() && i <= round.index + q2 - 1; i++){
                     Round r = rounds.get(i);
                     HashSet<Match> m = r.adjustSecondConstraint(u, match);
                     adjustedMatches.addAll(m);
@@ -123,13 +116,13 @@ public class BranchAndBound implements Runnable {
             else{
                 // Check if each umpire visited each team's home -> sum visitedTeams has to be size teams for each umpire
                 if(checkConstraintAllVisited) {  
-                    // for(Umpire umpire: umpires){
-                    //     if(!umpire.checkAllVisited()) {
-                    //         match.umpire = null;
-                    //         currentDistance -= u.removeFromMatch();
-                    //         continue umpireLoop;
-                    //     }
-                    // }
+                    for(Umpire umpire: umpires){
+                        if(!umpire.checkAllVisited()) {
+                            match.umpire = null;
+                            currentDistance -= u.removeFromMatch();
+                            continue umpireLoop;
+                        }
+                    }
                 }
 
                 // Check if current distance is less than upper bound
@@ -153,6 +146,11 @@ public class BranchAndBound implements Runnable {
     }
 
     public void feasibilityCheck(){
+
+        // TODO, 2 first matches are copies due to fixed umpires and matches
+        for(Umpire u: solutions){
+            u.matches.remove(0);
+        }
 
         // Generating matrix
         int[][] formattedSolution = new int[Main.nRounds][Main.n];
@@ -279,6 +277,7 @@ public class BranchAndBound implements Runnable {
         String line;
         while ((line = reader.readLine()) != null) {
             System.out.println("--------------------");
+            System.out.println("Our distance: " + upperBound);
             System.out.println(line);
             System.out.println("--------------------");
         }

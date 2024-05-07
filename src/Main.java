@@ -2,9 +2,9 @@ import java.io.*;
 import java.util.*;
 public class Main {
     // https://benchmark.gent.cs.kuleuven.be/tup/en/results/
-    static int q1 = 5;
-    static int q2 = 2;
-    static String file = "umps10";
+    static int q1 = 8;
+    static int q2 = 3;
+    static String file = "umps14";
     static int n;
     static int nTeams;
     static int nRounds;
@@ -30,12 +30,12 @@ public class Main {
         }
 
         // Start thread for lowerbounds
-        LowerBound lowerBound = new LowerBound(new ArrayList<>(rounds), new ArrayList<>(matches), new ArrayList<>(umpires), new ArrayList<>(teams));
+        LowerBound lowerBound = new LowerBound(rounds, matches, umpires, teams);
         Thread lowerBounds = new Thread(lowerBound);
         lowerBounds.run();
 
         // Start new thread for branching
-        BranchAndBound branchAndBound = new BranchAndBound(q1, q2, lowerBound, new ArrayList<>(rounds), new ArrayList<>(matches), new ArrayList<>(umpires), new ArrayList<>(teams), 0, true);
+        BranchAndBound branchAndBound = new BranchAndBound(q1, q2, lowerBound, rounds, matches, umpires, teams, 0, true);
         Thread branching = new Thread(branchAndBound);
         branching.run();
 

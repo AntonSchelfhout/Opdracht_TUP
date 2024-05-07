@@ -5,22 +5,21 @@ import java.util.List;
 public class Umpire {
     public int id;
     public List<Match> matches = new ArrayList<>();
-    public int[] visitedTeams = new int[Main.nTeams];
+    public List<Team> visitedTeams = new ArrayList<>();
 
     public Umpire(int id) {
         this.id = id;
-        for(int i = 0; i < visitedTeams.length; i++){
-            visitedTeams[i] = 0;
-        }
+        this.visitedTeams = new ArrayList<>();
     }
+
     public Umpire(Umpire other) {
         this.id = other.id;
         this.matches = new ArrayList<>(other.matches);
-        this.visitedTeams = other.visitedTeams.clone();
+        this.visitedTeams = new ArrayList<>(other.visitedTeams);
     }
 
     public int addToMatch(Match m){
-        visitedTeams[m.homeTeam.teamId] = 1;
+        visitedTeams.add(m.homeTeam);
         matches.add(m);
 
         if(matches.size() == 1){
@@ -33,7 +32,7 @@ public class Umpire {
 
     public int removeFromMatch(){
         Match m = matches.getLast();
-        visitedTeams[m.homeTeam.teamId] = 0;
+        visitedTeams.remove(m.homeTeam);
         Match removedMatch = matches.removeLast();
 
         if(matches.size() == 0){
@@ -45,11 +44,13 @@ public class Umpire {
     }
 
     public boolean checkAllVisited(){
-        int sum = 0;
-        for(int i = 0; i < visitedTeams.length; i++){
-            sum += visitedTeams[i];
+        // Check if visitedTeams contains Main.nTeams diffrent teams
+        for(int i = 0; i < Main.nTeams; i++){
+            if(!visitedTeams.contains(Main.teams.get(i))){
+                return false;
+            }
         }
-        return sum == Main.nTeams;
+        return true;
     }
 
     @Override

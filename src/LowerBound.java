@@ -87,7 +87,7 @@ public class LowerBound implements Runnable{
                     List<Match> matchSubset = matches.subList(r0 * Main.n, (r + k) * Main.n); 
                     
                     //System.out.println("From: " + r0 + " TO: " + (r + k));
-                    BranchAndBound branchAndBound = new BranchAndBound(0, 0, this, new ArrayList<>(roundsSubset), new ArrayList<>(matchSubset), new ArrayList<>(umpires), new ArrayList<>(teams), r0, false);
+                    BranchAndBound branchAndBound = new BranchAndBound(0, 0, this, roundsSubset, matchSubset, umpires, teams, r0, false);
                     branchAndBound.branch(0);
                     solutions[r0][r+k] = branchAndBound.getTotalDistance();
 
