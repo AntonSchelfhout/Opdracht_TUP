@@ -44,8 +44,10 @@ public class FastBranchAndBound implements Runnable {       // misleading name, 
     public void branch(int umpireIndex, int roundIndex) {
         Round currentRound = rounds.get(roundIndex);
         Umpire currentUmpire = umpires.get(umpireIndex);
+        List<Match> feasibleMatches = currentUmpire.feasibleMatches.get(roundIndex);
 
-        umpireLoop: for(Match currenMatch: currentUmpire.feasibleMatches){ 
+        umpireLoop: for(Match currenMatch: feasibleMatches){ 
+            if (currenMatch.isAssigned) continue; 
 
             // Assign umpire to match
             currentDistance += currentUmpire.addToMatch(currenMatch);

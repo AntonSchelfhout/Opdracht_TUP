@@ -38,11 +38,14 @@ public class BranchAndBound implements Runnable {
     public void branch(int umpireIndex, int roundIndex) {
         Round currentRound = rounds.get(roundIndex);
         Umpire currentUmpire = umpires.get(umpireIndex);
+        List<Match> feasibleMatches = currentUmpire.feasibleMatches.get(roundIndex);
 
-        umpireLoop: for(Match currenMatch: currentUmpire.feasibleMatches){ 
+        umpireLoop: for(Match currentMatch: feasibleMatches){ 
+            // Skip if match is already assigned   
+            if (currentMatch.isAssigned) continue;                       
 
             // Assign match to umpire
-            currentDistance += currentUmpire.addToMatch(currenMatch);
+            currentDistance += currentUmpire.addToMatch(currentMatch);
 
             // Prune if current distance is already greater than upper bound
             if(currentDistance + lowerBound.lowerBounds[roundIndex][Main.nRounds - 1] >= upperBound) {
@@ -54,38 +57,45 @@ public class BranchAndBound implements Runnable {
             if(roundIndex < Main.nRounds - 1 || umpireIndex < Main.n - 1) {
 
                 // Save feasible matches of the umpire to reset later on
-                List<Match> oldFeasibleMatches = new ArrayList<>(currentUmpire.feasibleMatches);
-
+                List<Match> removedMatchs = new ArrayList<>();
+                
                 // Adjust contraints for the next q1 rounds
+                boolean notFeasible = false;
                 for(int i = roundIndex + 1; i < rounds.size() && i <= roundIndex + Main.q1 - 1; i++){
                     Round r = rounds.get(i);
-                    Match matchWithSameLocation = r.locations.get(currenMatch.homeTeam);
+                    Match matchWithSameLocation = r.locations.get(currentMatch.homeTeam);
 
                     if(matchWithSameLocation != null){
-                        currentUmpire.feasibleMatches.remove(matchWithSameLocation);
+                        notFeasible &= currentUmpire.removeFeasibleMatch(i, matchWithSameLocation);
+                        removedMatchs.add(matchWithSameLocation);
                     }
-
                 }
                 // Adjust contraints for the next q2 rounds
-                for(int i = roundIndex + 1; i < rounds.size() && i <= roundIndex+ Main.q2 - 1; i++){
+                for(int i = roundIndex + 1; i < rounds.size() && i <= roundIndex + Main.q2 - 1; i++){
                     Round r = rounds.get(i);
-                    Match team1 = r.teams.get(currenMatch.homeTeam);
-                    Match team2 = r.teams.get(currenMatch.outTeam);
+                    Match team1 = r.teams.get(currentMatch.homeTeam);
+                    Match team2 = r.teams.get(currentMatch.outTeam);
 
-                    currentUmpire.feasibleMatches.remove(team1);
-                    currentUmpire.feasibleMatches.remove(team2);
+                    notFeasible &= currentUmpire.removeFeasibleMatch(i, team1);
+                    notFeasible &= currentUmpire.removeFeasibleMatch(i, team2);
+                    removedMatchs.add(team1);
+                    removedMatchs.add(team2);
                 }
 
                 // Branch and bound to next umpire
-                if(umpireIndex == Main.n - 1){
-                    branch(0, roundIndex + 1);
+                if(!notFeasible){
+                    if(umpireIndex == Main.n - 1){
+                        branch(0, roundIndex + 1);
+                    }
+                    else{
+                        branch(umpireIndex + 1, roundIndex); 
+                    }
                 }
-                else{
-                    branch(umpireIndex + 1, roundIndex); 
-                }
-
+                
                 // Reset feasible matches
-                currentUmpire.feasibleMatches = new ArrayList<>(oldFeasibleMatches);
+                for(Match m: removedMatchs){
+                    currentUmpire.feasibleMatches.get(m.round).add(m);
+                }
             }  
             else{
                 // Check if each umpire visited each team's home -> sum visitedTeams has to be size teams for each umpire
@@ -97,6 +107,7 @@ public class BranchAndBound implements Runnable {
                 }
                 // Check if current distance is less than upper bound
                 if (currentDistance < upperBound){
+                    System.out.println("New upper bound: " + currentDistance);
                     upperBound = currentDistance;
 
                     // Save the solution
@@ -135,7 +146,7 @@ public class BranchAndBound implements Runnable {
             for(int j = 0; j < Main.n; j++){
                 for(int k = j + 1; k < Main.n; k++){
                     if(formattedSolution[i][j] == formattedSolution[i][k]){
-                        System.out.println("ERROR: Umpire " + formattedSolution[i][j] + " goes to match " + j + " and " + k + " at the same time");
+                        System.out.println("ERROR: Umpire " + formattedSolution[i][j] + " goes to match " + j + " and " + k + " at the same time in round " + i);
                     }
                 }
             }

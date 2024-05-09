@@ -2,9 +2,9 @@ import java.io.*;
 import java.util.*;
 public class Main {
     // https://benchmark.gent.cs.kuleuven.be/tup/en/results/
-    static int q1 = 5;
+    static int q1 = 4;
     static int q2 = 2;
-    static String file = "umps10";
+    static String file = "umps8";
     static int n;
     static int nTeams;
     static int nRounds;
@@ -35,7 +35,7 @@ public class Main {
         // Start thread for lowerbounds
         LowerBound lowerBound = new LowerBound(LBrounds, LBmatches, LBumpires, LBteams);
         Thread lowerBounds = new Thread(lowerBound);
-        lowerBounds.run();
+        //lowerBounds.run();
 
         // Start new thread for branching
         BranchAndBound branchAndBound = new BranchAndBound(lowerBound, rounds, matches, umpires, teams);
@@ -124,8 +124,10 @@ public class Main {
         }
 
         for(int i = 0; i < n; i++){
-            umpires.get(i).feasibleMatches = matches;
-            LBumpires.get(i).feasibleMatches = LBmatches;
+            for (int r = 0; r < nRounds; r++) {
+                umpires.get(i).fillFeasibleMatches(r);
+                LBumpires.get(i).fillFeasibleMatches(r);
+            }
         }
         
         //Debug print the rounds

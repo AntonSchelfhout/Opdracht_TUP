@@ -81,8 +81,8 @@ public class LowerBound implements Runnable{
                 //System.out.println("r = " + r);
                 for(int r0 = r + k - 2; r0 >= r; r0--) {
                     if(solutions[r0][r+k] != 0) continue;
-                    
-                    reset();
+
+                    // reset();
 
                     FastBranchAndBound branchAndBound = new FastBranchAndBound(this, r0, rounds, matches, umpires, teams);
                     branchAndBound.branch(0, r0);
@@ -112,12 +112,11 @@ public class LowerBound implements Runnable{
         this.calculateLowerBounds();
     }
 
-    public void reset() {
-        // Reset all umpires
-        for(Umpire u: umpires) {
-            u.matches = new ArrayList<>();
-            u.visitedTeams = new int[Main.nTeams];
-            u.feasibleMatches = new ArrayList<>(matches);
-        }
-    }
+    // public void reset() {
+    //     // Reset all umpires
+    //     for(Umpire u: umpires) {
+    //         u.matches = new ArrayList<>();
+    //         u.visitedTeams = new int[Main.nTeams];
+    //     }
+    // }
 }

@@ -6,12 +6,14 @@ public class Match {
     public Team homeTeam;
     public Team outTeam;
     public int index;
+    public boolean isAssigned;
 
     public Match(int round, Team homeTeam, Team outTeam, int index){
         this.round = round;
         this.homeTeam = homeTeam;
         this.outTeam = outTeam;
         this.index = index;
+        this.isAssigned = false;
     }
 
     @Override
