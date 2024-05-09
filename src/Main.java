@@ -30,7 +30,6 @@ public class Main {
         // Fix de eerste ronde
         for (int i = 0; i < Main.n; i++) {
             LBumpires.get(i).addToMatch(LBmatches.get(i));
-            LBmatches.get(i).addUmpire(LBumpires.get(i));
         }
 
         // Start thread for lowerbounds
@@ -122,6 +121,11 @@ public class Main {
             rounds.add(r);
             LBrounds.add(LBr);
             round++;
+        }
+
+        for(int i = 0; i < n; i++){
+            umpires.get(i).feasibleMatches = matches;
+            LBumpires.get(i).feasibleMatches = LBmatches;
         }
         
         //Debug print the rounds

@@ -81,15 +81,11 @@ public class LowerBound implements Runnable{
                 //System.out.println("r = " + r);
                 for(int r0 = r + k - 2; r0 >= r; r0--) {
                     if(solutions[r0][r+k] != 0) continue;
-
-                    // get subset of rounds and matches
-                    List<Round> roundsSubset = rounds.subList(r0, r + k); 
-                    List<Match> matchSubset = matches.subList(r0 * Main.n, (r + k) * Main.n); 
-
+                    
                     reset();
 
-                    FastBranchAndBound branchAndBound = new FastBranchAndBound(this, r0, roundsSubset, matchSubset, umpires, teams);
-                    branchAndBound.branch(0);
+                    FastBranchAndBound branchAndBound = new FastBranchAndBound(this, r0, rounds, matches, umpires, teams);
+                    branchAndBound.branch(0, r0);
                     solutions[r0][r+k] = branchAndBound.getTotalDistance();
 
                     for(int r1=r0; r1>=0; r1--) {
@@ -120,13 +116,8 @@ public class LowerBound implements Runnable{
         // Reset all umpires
         for(Umpire u: umpires) {
             u.matches = new ArrayList<>();
-            u.visitedTeams = new ArrayList<>();
+            u.visitedTeams = new int[Main.nTeams];
+            u.feasibleMatches = new ArrayList<>(matches);
         }
-        
-        // Reset all matches
-        for(Match m: matches) {
-            m.feasibleUmpires = new ArrayList<>(Main.umpires);
-        }
-        
     }
 }

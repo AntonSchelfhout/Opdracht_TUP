@@ -32,98 +32,83 @@ public class BranchAndBound implements Runnable {
 
     @Override
     public void run() {
-        branch(0);
+        branch(0, 0);
     }
 
-    public int getTotalDistance() {
-        return upperBound;
-    }
-    
+    public void branch(int umpireIndex, int roundIndex) {
+        Round currentRound = rounds.get(roundIndex);
+        Umpire currentUmpire = umpires.get(umpireIndex);
 
-    // TODO aanpassen dat result gereturned wordt
-    public void branch(int matchIndex) {
-        Match match = matches.get(matchIndex);
-        Round round = rounds.get(match.round);
+        umpireLoop: for(Match currenMatch: currentUmpire.feasibleMatches){ 
 
-        umpireLoop: for(Umpire u: match.feasibleUmpires){ 
-
-            // Assign umpire to match
-            currentDistance += u.addToMatch(match);
+            // Assign match to umpire
+            currentDistance += currentUmpire.addToMatch(currenMatch);
 
             // Prune if current distance is already greater than upper bound
-            if(currentDistance + lowerBound.lowerBounds[round.index][Main.nRounds - 1] >= upperBound) {
-                currentDistance -= u.removeFromMatch();
+            if(currentDistance + lowerBound.lowerBounds[roundIndex][Main.nRounds - 1] >= upperBound) {
+                currentDistance -= currentUmpire.removeFromMatch();
                 continue umpireLoop;
             }
 
-            // If not all matches are assigned umpires
-            Set<Match> adjustedMatches = new HashSet<>();
-            if(matchIndex < matches.size()-1){
-                // Check constraints
-                if(!round.checkSameRound(u, match)){
-                    currentDistance -= u.removeFromMatch();
-                    continue umpireLoop;
-                }
-                for(int i = round.index + 1; i < rounds.size() && i <= round.index + Main.q1 - 1; i++){
+            // If not in last round or not the last umpire
+            if(roundIndex < Main.nRounds - 1 || umpireIndex < Main.n - 1) {
+
+                // Save feasible matches of the umpire to reset later on
+                List<Match> oldFeasibleMatches = new ArrayList<>(currentUmpire.feasibleMatches);
+
+                // Adjust contraints for the next q1 rounds
+                for(int i = roundIndex + 1; i < rounds.size() && i <= roundIndex + Main.q1 - 1; i++){
                     Round r = rounds.get(i);
-                    if(!r.checkFirstConstraint(u, match)){
-                        currentDistance -= u.removeFromMatch();
-                        continue umpireLoop;
+                    Match matchWithSameLocation = r.locations.get(currenMatch.homeTeam);
+
+                    if(matchWithSameLocation != null){
+                        currentUmpire.feasibleMatches.remove(matchWithSameLocation);
                     }
+
                 }
-                for(int i = round.index + 1; i < rounds.size() && i <= round.index + Main.q2 - 1; i++){
+                // Adjust contraints for the next q2 rounds
+                for(int i = roundIndex + 1; i < rounds.size() && i <= roundIndex+ Main.q2 - 1; i++){
                     Round r = rounds.get(i);
-                    if(!r.checkSecondConstraint(u, match)){
-                        currentDistance -= u.removeFromMatch();
-                        continue umpireLoop;
-                    }
+                    Match team1 = r.teams.get(currenMatch.homeTeam);
+                    Match team2 = r.teams.get(currenMatch.outTeam);
+
+                    currentUmpire.feasibleMatches.remove(team1);
+                    currentUmpire.feasibleMatches.remove(team2);
                 }
 
-                // TODO if we assign umpire but visited teams total is smaller then rounds left, abord early
-
-                // Commit changes
-                // remove selected umpire form other matches feasible umpires
-                adjustedMatches = round.adjustSameRound(u, match);
-                for(int i = round.index + 1; i < rounds.size() && i <= round.index + Main.q1 - 1; i++){
-                    Round r = rounds.get(i);
-                    HashSet<Match> m = r.adjustFirstConstraint(u, match);
-                    adjustedMatches.addAll(m);
+                // Branch and bound to next umpire
+                if(umpireIndex == Main.n - 1){
+                    branch(0, roundIndex + 1);
                 }
-                for(int i = round.index + 1; i < rounds.size() && i <= round.index + Main.q2 - 1; i++){
-                    Round r = rounds.get(i);
-                    HashSet<Match> m = r.adjustSecondConstraint(u, match);
-                    adjustedMatches.addAll(m);
+                else{
+                    branch(umpireIndex + 1, roundIndex); 
                 }
 
-                // Branch and bound to next match
-                branch(matchIndex+1); 
+                // Reset feasible matches
+                currentUmpire.feasibleMatches = new ArrayList<>(oldFeasibleMatches);
             }  
             else{
                 // Check if each umpire visited each team's home -> sum visitedTeams has to be size teams for each umpire
-                for(Umpire umpire: umpires){
+                for(Umpire umpire: umpires) {
                     if(!umpire.checkAllVisited()) {
-                        currentDistance -= u.removeFromMatch();
+                        currentDistance -= currentUmpire.removeFromMatch();
                         continue umpireLoop;
                     }
                 }
-                
-
                 // Check if current distance is less than upper bound
                 if (currentDistance < upperBound){
                     upperBound = currentDistance;
 
+                    // Save the solution
                     solutions = new ArrayList<>();
-                    for(Umpire umpire: umpires){
+                    for(Umpire umpire: umpires) {
                         solutions.add(new Umpire(umpire));
                     }
                 }
             }
             
             // Rollback changes
-            currentDistance -= u.removeFromMatch();
-            for(Match m: adjustedMatches){
-                m.addUmpire(u);
-            }
+            currentDistance -= currentUmpire.removeFromMatch();
         }
     }
 
