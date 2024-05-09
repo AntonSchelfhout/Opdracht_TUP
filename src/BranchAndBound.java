@@ -9,15 +9,10 @@ import java.util.List;
 import java.util.Set;
 
 public class BranchAndBound implements Runnable {
-    int q1;
-    int q2;
-    boolean checkConstraintAllVisited;
     int upperBound = Integer.MAX_VALUE;
     int currentDistance = 0;
     LowerBound lowerBound;
 
-    int startRound;
-       
     List<Round> rounds = new ArrayList<>();
     List<Match> matches = new ArrayList<>();
     List<Umpire> umpires = new ArrayList<>();
@@ -25,14 +20,9 @@ public class BranchAndBound implements Runnable {
 
     List<Umpire> solutions;
 
-    public BranchAndBound(int q1, int q2, LowerBound lowerBound, List<Round> rounds, List<Match> matches, List<Umpire> umpires, List<Team> teams, int startRound, boolean checkConstraintAllVisited) {
-        this.q1 = q1;
-        this.q2 = q2;
+    public BranchAndBound(LowerBound lowerBound, List<Round> rounds, List<Match> matches, List<Umpire> umpires, List<Team> teams) {
         this.lowerBound = lowerBound;
-        this.startRound = startRound;
-        this.checkConstraintAllVisited = checkConstraintAllVisited;
-
-        
+  
         // Copy construct the rounds, matches, umpires and teams
         this.rounds = rounds;
         this.matches = matches;
@@ -53,17 +43,15 @@ public class BranchAndBound implements Runnable {
     // TODO aanpassen dat result gereturned wordt
     public void branch(int matchIndex) {
         Match match = matches.get(matchIndex);
-        Round round = rounds.get(match.round - startRound);
+        Round round = rounds.get(match.round);
 
         umpireLoop: for(Umpire u: match.feasibleUmpires){ 
 
             // Assign umpire to match
-            match.umpire = u;
             currentDistance += u.addToMatch(match);
 
             // Prune if current distance is already greater than upper bound
             if(currentDistance + lowerBound.lowerBounds[round.index][Main.nRounds - 1] >= upperBound) {
-                match.umpire = null;
                 currentDistance -= u.removeFromMatch();
                 continue umpireLoop;
             }
@@ -73,22 +61,19 @@ public class BranchAndBound implements Runnable {
             if(matchIndex < matches.size()-1){
                 // Check constraints
                 if(!round.checkSameRound(u, match)){
-                    match.umpire = null;
                     currentDistance -= u.removeFromMatch();
                     continue umpireLoop;
                 }
-                for(int i = round.index + 1; i < rounds.size() && i <= round.index + q1 - 1; i++){
+                for(int i = round.index + 1; i < rounds.size() && i <= round.index + Main.q1 - 1; i++){
                     Round r = rounds.get(i);
                     if(!r.checkFirstConstraint(u, match)){
-                        match.umpire = null;
                         currentDistance -= u.removeFromMatch();
                         continue umpireLoop;
                     }
                 }
-                for(int i = round.index + 1; i < rounds.size() && i <= round.index + q2 - 1; i++){
+                for(int i = round.index + 1; i < rounds.size() && i <= round.index + Main.q2 - 1; i++){
                     Round r = rounds.get(i);
                     if(!r.checkSecondConstraint(u, match)){
-                        match.umpire = null;
                         currentDistance -= u.removeFromMatch();
                         continue umpireLoop;
                     }
@@ -99,12 +84,12 @@ public class BranchAndBound implements Runnable {
                 // Commit changes
                 // remove selected umpire form other matches feasible umpires
                 adjustedMatches = round.adjustSameRound(u, match);
-                for(int i = round.index + 1; i < rounds.size() && i <= round.index + q1 - 1; i++){
+                for(int i = round.index + 1; i < rounds.size() && i <= round.index + Main.q1 - 1; i++){
                     Round r = rounds.get(i);
                     HashSet<Match> m = r.adjustFirstConstraint(u, match);
                     adjustedMatches.addAll(m);
                 }
-                for(int i = round.index + 1; i < rounds.size() && i <= round.index + q2 - 1; i++){
+                for(int i = round.index + 1; i < rounds.size() && i <= round.index + Main.q2 - 1; i++){
                     Round r = rounds.get(i);
                     HashSet<Match> m = r.adjustSecondConstraint(u, match);
                     adjustedMatches.addAll(m);
@@ -115,15 +100,13 @@ public class BranchAndBound implements Runnable {
             }  
             else{
                 // Check if each umpire visited each team's home -> sum visitedTeams has to be size teams for each umpire
-                if(checkConstraintAllVisited) {  
-                    for(Umpire umpire: umpires){
-                        if(!umpire.checkAllVisited()) {
-                            match.umpire = null;
-                            currentDistance -= u.removeFromMatch();
-                            continue umpireLoop;
-                        }
+                for(Umpire umpire: umpires){
+                    if(!umpire.checkAllVisited()) {
+                        currentDistance -= u.removeFromMatch();
+                        continue umpireLoop;
                     }
                 }
+                
 
                 // Check if current distance is less than upper bound
                 if (currentDistance < upperBound){
@@ -137,7 +120,6 @@ public class BranchAndBound implements Runnable {
             }
             
             // Rollback changes
-            match.umpire = null;
             currentDistance -= u.removeFromMatch();
             for(Match m: adjustedMatches){
                 m.addUmpire(u);
@@ -146,12 +128,6 @@ public class BranchAndBound implements Runnable {
     }
 
     public void feasibilityCheck(){
-
-        // TODO, 2 first matches are copies due to fixed umpires and matches
-        for(Umpire u: solutions){
-            u.matches.remove(0);
-        }
-
         // Generating matrix
         int[][] formattedSolution = new int[Main.nRounds][Main.n];
         for(Umpire u: solutions){

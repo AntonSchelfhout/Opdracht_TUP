@@ -7,7 +7,6 @@ public class Match {
     public Team outTeam;
     public int index;
 
-    public Umpire umpire;
     public List<Umpire> feasibleUmpires = new ArrayList<>();
 
     public Match(int round, Team homeTeam, Team outTeam, int index){
