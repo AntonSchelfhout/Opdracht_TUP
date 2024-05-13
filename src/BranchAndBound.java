@@ -13,12 +13,14 @@ public class BranchAndBound implements Runnable {
     int currentDistance = 0;
     LowerBound lowerBound;
 
-    List<Round> rounds = new ArrayList<>();
-    List<Match> matches = new ArrayList<>();
-    List<Umpire> umpires = new ArrayList<>();
-    List<Team> teams = new ArrayList<>();
+    List<Round> rounds;
+    List<Match> matches;
+    List<Umpire> umpires;
+    List<Team> teams;
 
     List<Umpire> solutions;
+
+    int branchCounter = 0;
 
     public BranchAndBound(LowerBound lowerBound, List<Round> rounds, List<Match> matches, List<Umpire> umpires, List<Team> teams) {
         this.lowerBound = lowerBound;
@@ -46,7 +48,7 @@ public class BranchAndBound implements Runnable {
         Round round = rounds.get(match.round);
 
         umpireLoop: for(Umpire u: match.feasibleUmpires){ 
-
+            branchCounter++;
             // Assign umpire to match
             currentDistance += u.addToMatch(match);
 

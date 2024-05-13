@@ -43,6 +43,7 @@ public class Main {
         Thread branching = new Thread(branchAndBound);
         branching.run();
 
+
         // Wait for the threads to finish
         branching.join();
 
@@ -50,6 +51,8 @@ public class Main {
         long endTime = System.currentTimeMillis();
         long totalTime = endTime - startTime;
         System.out.println("Total runtime: " + totalTime + " milliseconds");
+
+        System.out.println("Nodes in branch and bound: " + branchAndBound.branchCounter);          //492000
 
         // Print the results
         branchAndBound.feasibilityCheck();
