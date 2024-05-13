@@ -14,10 +14,10 @@ public class BranchAndBound implements Runnable {
     LowerBound lowerBound;
     
 
-    List<Round> rounds = new ArrayList<>();
-    List<Match> matches = new ArrayList<>();
-    List<Umpire> umpires = new ArrayList<>();
-    List<Team> teams = new ArrayList<>();
+    List<Round> rounds;
+    List<Match> matches;
+    List<Umpire> umpires;
+    List<Team> teams;
 
     List<Umpire> solutions;
 
