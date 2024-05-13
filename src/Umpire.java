@@ -5,21 +5,21 @@ import java.util.List;
 public class Umpire {
     public int id;
     public List<Match> matches = new ArrayList<>();
-    public List<Team> visitedTeams = new ArrayList<>();
+    public int[] visitedTeams = new int[Main.nTeams];
 
     public Umpire(int id) {
         this.id = id;
-        this.visitedTeams = new ArrayList<>();
+        this.visitedTeams = new int[Main.nTeams];
     }
 
     public Umpire(Umpire other) {
         this.id = other.id;
         this.matches = new ArrayList<>(other.matches);
-        this.visitedTeams = new ArrayList<>(other.visitedTeams);
+        this.visitedTeams = other.visitedTeams.clone();
     }
 
     public int addToMatch(Match m){
-        visitedTeams.add(m.homeTeam);
+        visitedTeams[m.homeTeam.teamId]++;
         matches.add(m);
 
         if(matches.size() == 1){
@@ -32,7 +32,7 @@ public class Umpire {
 
     public int removeFromMatch(){
         Match m = matches.getLast();
-        visitedTeams.remove(m.homeTeam);
+        visitedTeams[m.homeTeam.teamId]--;
         Match removedMatch = matches.removeLast();
 
         if(matches.size() == 0){
@@ -43,14 +43,29 @@ public class Umpire {
         return Main.dist[prevMatch.homeTeam.teamId][removedMatch.homeTeam.teamId];
     }
 
+    // for branch and bound
     public boolean checkAllVisited(){
         // Check if visitedTeams contains Main.nTeams diffrent teams
+        int sum = 0;
         for(int i = 0; i < Main.nTeams; i++){
-            if(!visitedTeams.contains(Main.teams.get(i))){
-                return false;
+            if(visitedTeams[i] > 0){
+                sum++;
             }
         }
-        return true;
+        return sum == Main.nTeams;
+    }
+
+    // for fast branch and bound
+    public boolean checkVisitingAllTeamsPossible(int roundsLeft){
+        // Check if it is possible to visit all teams in the remaining rounds
+        int notVisitedTeams = 0;
+        for(int i = 0; i < Main.nTeams; i++){
+            if(visitedTeams[i] <= 0){
+                notVisitedTeams++;
+            }
+        }
+
+        return notVisitedTeams <= roundsLeft;
     }
 
     @Override

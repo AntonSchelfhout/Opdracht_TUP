@@ -58,7 +58,7 @@ public class Round {
         HashSet<Match> res = new HashSet<>();
         for(Match match : matches){
             if(!match.equals(m) && match.index > m.index){
-                if(match.removeUmpire(u)){
+                if(match.removeFeasibleUmpire(u)){
                     res.add(match);
                 }
             }
@@ -69,7 +69,7 @@ public class Round {
     public HashSet<Match> adjustFirstConstraint(Umpire u, Match m){
         Match matchWithSameLocation = locations.get(m.homeTeam);
         if(matchWithSameLocation != null){
-            if(matchWithSameLocation.removeUmpire(u)){
+            if(matchWithSameLocation.removeFeasibleUmpire(u)){
                 return new HashSet<Match>(){{
                     add(matchWithSameLocation);
                 }};
@@ -83,10 +83,10 @@ public class Round {
         Match team2 = teams.get(m.outTeam);
 
         HashSet<Match> res = new HashSet<>();
-        if(team1.removeUmpire(u)){
+        if(team1.removeFeasibleUmpire(u)){
             res.add(team1);
         }
-        if(team2.removeUmpire(u)){
+        if(team2.removeFeasibleUmpire(u)){
             res.add(team2);   
         }
         return res;

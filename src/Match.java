@@ -25,23 +25,27 @@ public class Match {
         return false;
     }
 
-    public boolean removeUmpire(Umpire u){
+    public boolean removeFeasibleUmpire(Umpire u){
         boolean res = feasibleUmpires.contains(u);
         feasibleUmpires.remove(u);
         return res;
     }
 
-    // public boolean homeTeamCanBeReachedByAllUmpires(){
-    //     for(Umpire u : feasibleUmpires){
-    //         if(homeTeam.umpiresToVisit.contains(u)){
-    //             return false;
-    //         }
-    //     }
-    //     return true;
-    // }
-
-    public void addUmpire(Umpire u){
+    public void addFeasibleUmpire(Umpire u){
         feasibleUmpires.add(u);
+    }
+
+    public void sortFeasibleUmpires(){
+        feasibleUmpires.sort((u1, u2) -> {
+            if (u1.matches.isEmpty() || u2.matches.isEmpty()) {
+                return 0;
+            }
+            Match u1LastMatch = u1.matches.getLast();
+            Match u2LastMatch = u2.matches.getLast();
+            int d1 = Main.dist[u1LastMatch.homeTeam.teamId][homeTeam.teamId];
+            int d2 = Main.dist[u2LastMatch.homeTeam.teamId][homeTeam.teamId];
+            return d2 - d1;
+        });
     }
 
     @Override

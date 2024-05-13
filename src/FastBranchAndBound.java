@@ -45,7 +45,9 @@ public class FastBranchAndBound implements Runnable {
         Match match = matches.get(matchIndex);
         Round round = rounds.get(match.round - startRound);
 
-        umpireLoop: for(Umpire u: match.feasibleUmpires){ 
+        match.sortFeasibleUmpires();
+        
+        umpireLoop: for(Umpire u: match.feasibleUmpires) { 
 
             // Assign umpire to match
             currentDistance += u.addToMatch(match);
@@ -57,28 +59,69 @@ public class FastBranchAndBound implements Runnable {
             }
 
             // If not all matches are assigned umpires
-            if(matchIndex < matches.size()-1){
+            Set<Match> adjustedMatches = new HashSet<>();
+            if(matchIndex < matches.size() - 1) {
 
-                // Remove umpire from all subsequent matches
-                for(int j = matchIndex+1; j < Main.n; j++){
-                    Match nextMatch = round.matches.get(j);
-                    nextMatch.feasibleUmpires.remove(u);
+                // Check same round
+                if(!round.checkSameRound(u, match)){
+                    currentDistance -= u.removeFromMatch();
+                    continue umpireLoop;
+                }
+                
+                // check Q1
+                for(int i = round.index + 1; i < rounds.size() && i <= round.index + Main.q1 - 1; i++){
+                    Round r = rounds.get(i);
+                    if(!r.checkFirstConstraint(u, match)){
+                        currentDistance -= u.removeFromMatch();
+                        continue umpireLoop;
+                    }
                 }
 
+                // check Q2
+                for(int i = round.index + 1; i < rounds.size() && i <= round.index + Main.q2 - 1; i++){
+                    Round r = rounds.get(i);
+                    if(!r.checkSecondConstraint(u, match)){
+                        currentDistance -= u.removeFromMatch();
+                        continue umpireLoop;
+                    }
+                }
+
+                // Commit changes
+                // remove selected umpire form other matches feasible umpires
+                adjustedMatches = round.adjustSameRound(u, match);
+                for(int i = round.index + 1; i < rounds.size() && i <= round.index + Main.q1 - 1; i++){
+                    Round r = rounds.get(i);
+                    HashSet<Match> m = r.adjustFirstConstraint(u, match);
+                    adjustedMatches.addAll(m);
+                }
+                for(int i = round.index + 1; i < rounds.size() && i <= round.index + Main.q2 - 1; i++){
+                    Round r = rounds.get(i);
+                    HashSet<Match> m = r.adjustSecondConstraint(u, match);
+                    adjustedMatches.addAll(m);
+                }
+                
                 branch(matchIndex+1); 
             }  
-            else{
+            else {
+                // Check all visited DOES NOT WORK
+                int roundsLeft = Main.nRounds - (round.index - startRound + 1);
+                for(Umpire umpire: umpires){
+                    if(!umpire.checkVisitingAllTeamsPossible(roundsLeft)){
+                        currentDistance -= u.removeFromMatch();
+                        continue umpireLoop;
+                    }
+                }
+
                 // Check if current distance is less than upper bound
-                if (currentDistance < upperBound){
+                if (currentDistance < upperBound) {
                     upperBound = currentDistance;
                 }
             }
             
             // Rollback changes
             currentDistance -= u.removeFromMatch();
-            for(int j = matchIndex+1; j < Main.n; j++){
-                Match nextMatch = round.matches.get(j);
-                nextMatch.feasibleUmpires.add(u);
+            for(Match m: adjustedMatches){
+                m.addFeasibleUmpire(u);
             }
         }
     }

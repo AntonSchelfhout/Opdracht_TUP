@@ -21,6 +21,8 @@ public class BranchAndBound implements Runnable {
 
     List<Umpire> solutions;
 
+    int checkedNodes = 0;
+
     public BranchAndBound(LowerBound lowerBound, List<Round> rounds, List<Match> matches, List<Umpire> umpires, List<Team> teams) {
         this.lowerBound = lowerBound;
   
@@ -46,7 +48,11 @@ public class BranchAndBound implements Runnable {
         Match match = matches.get(matchIndex);
         Round round = rounds.get(match.round);
 
+        // match.sortFeasibleUmpires();
+
         umpireLoop: for(Umpire u: match.feasibleUmpires){ 
+
+            checkedNodes++;
 
             // Assign umpire to match
             currentDistance += u.addToMatch(match);
@@ -123,7 +129,8 @@ public class BranchAndBound implements Runnable {
             // Rollback changes
             currentDistance -= u.removeFromMatch();
             for(Match m: adjustedMatches){
-                m.addUmpire(u);
+                m.addFeasibleUmpire(u);
+
             }
         }
     }
@@ -144,7 +151,6 @@ public class BranchAndBound implements Runnable {
         //     }
         //     System.out.println();
         // }
-
 
         // Check if a umpire doesn't go to 2 or more matches at the same time
         for(int i = 0; i < Main.nRounds; i++){
@@ -254,6 +260,7 @@ public class BranchAndBound implements Runnable {
         String line;
         while ((line = reader.readLine()) != null) {
             System.out.println("--------------------");
+            System.out.println("Nodes: " + checkedNodes);
             System.out.println("Our distance: " + upperBound);
             System.out.println(line);
             System.out.println("--------------------");

@@ -4,6 +4,7 @@
 
 import java.util.ArrayList;
 import java.util.List;
+import java.lang.Thread;
 
 public class LowerBound implements Runnable{
     public int[][] solutions;       // matrix containing the values of solutions for the subproblems
@@ -113,14 +114,14 @@ public class LowerBound implements Runnable{
 
     @Override
     public void run() {
-        this.calculateLowerBounds();
+        calculateLowerBounds();
     }
 
     public void reset() {
         // Reset all umpires
         for(Umpire u: umpires) {
             u.matches = new ArrayList<>();
-            u.visitedTeams = new ArrayList<>();
+            u.visitedTeams = new int[Main.nTeams];
         }
         
         // Reset all matches

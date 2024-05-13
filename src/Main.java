@@ -30,7 +30,7 @@ public class Main {
         // Fix de eerste ronde
         for (int i = 0; i < Main.n; i++) {
             LBumpires.get(i).addToMatch(LBmatches.get(i));
-            LBmatches.get(i).addUmpire(LBumpires.get(i));
+            LBmatches.get(i).addFeasibleUmpire(LBumpires.get(i));
         }
 
         // Start thread for lowerbounds
@@ -41,6 +41,7 @@ public class Main {
         // Start new thread for branching
         BranchAndBound branchAndBound = new BranchAndBound(lowerBound, rounds, matches, umpires, teams);
         Thread branching = new Thread(branchAndBound);
+        
         branching.run();
 
         // Wait for the threads to finish
@@ -49,18 +50,18 @@ public class Main {
         // Print finished results
         long endTime = System.currentTimeMillis();
         long totalTime = endTime - startTime;
-        System.out.println("Total runtime: " + totalTime + " milliseconds");
+        System.out.println("Total runtime branch and bound: " + totalTime + " milliseconds");
 
         // Print the results
         branchAndBound.feasibilityCheck();
 
         // Print lower bounds
-        // for (int i=0; i<nRounds; i++) {
-        //     for (int j=0; j<nRounds; j++) {
-        //         System.out.print(lowerBound.lowerBounds[i][j] + " ");
-        //     }
-        //     System.out.println();
-        // }
+        for (int i=0; i<nRounds; i++) {
+            for (int j=0; j<nRounds; j++) {
+                System.out.print(lowerBound.lowerBounds[i][j] + " ");
+            }
+            System.out.println();
+        }
     }
 
     public static void readFile(String file) throws FileNotFoundException {
