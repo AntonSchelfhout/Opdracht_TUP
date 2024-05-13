@@ -12,6 +12,7 @@ public class BranchAndBound implements Runnable {
     int upperBound = Integer.MAX_VALUE;
     int currentDistance = 0;
     LowerBound lowerBound;
+    
 
     List<Round> rounds;
     List<Match> matches;
