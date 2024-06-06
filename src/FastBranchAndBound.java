@@ -11,7 +11,10 @@ import java.util.Set;
 public class FastBranchAndBound implements Runnable {
     int upperBound = Integer.MAX_VALUE;
     int currentDistance = 0;
+
     int startRound = 0;
+    int endRound = 0;
+    int numOfRounds = 0;
 
     LowerBound lowerBound;
    
@@ -20,9 +23,11 @@ public class FastBranchAndBound implements Runnable {
     List<Umpire> umpires = new ArrayList<>();
     List<Team> teams = new ArrayList<>();
 
-    public FastBranchAndBound(LowerBound lowerBound, int startRound, List<Round> rounds, List<Match> matches, List<Umpire> umpires, List<Team> teams) {    
+    public FastBranchAndBound(LowerBound lowerBound, int startRound, int endRound, List<Round> rounds, List<Match> matches, List<Umpire> umpires, List<Team> teams) {    
         this.lowerBound = lowerBound;
         this.startRound = startRound;
+        this.endRound = endRound;
+        this.numOfRounds = endRound - startRound;
 
         // Copy construct the rounds, matches, umpires and teams
         this.rounds = rounds;
@@ -51,9 +56,10 @@ public class FastBranchAndBound implements Runnable {
 
             // Assign umpire to match
             currentDistance += u.addToMatch(match);
-
+            
+            // TODO Partial matching (also add minimum distance for all remaining matches and umpires in this round)
             // Prune if current distance is already greater than upper bound
-            if(currentDistance + lowerBound.lowerBounds[round.index][Main.nRounds - 1] >= upperBound) {
+            if(currentDistance + lowerBound.lowerBounds[round.index][endRound] >= upperBound) {  
                 currentDistance -= u.removeFromMatch();
                 continue umpireLoop;
             }
@@ -61,15 +67,16 @@ public class FastBranchAndBound implements Runnable {
             // If not all matches are assigned umpires
             Set<Match> adjustedMatches = new HashSet<>();
             if(matchIndex < matches.size() - 1) {
-
+                
+                // === CHECKS === 
                 // Check same round
                 if(!round.checkSameRound(u, match)){
                     currentDistance -= u.removeFromMatch();
                     continue umpireLoop;
                 }
                 
-                // check Q1
-                for(int i = round.index + 1; i < rounds.size() && i <= round.index + Main.q1 - 1; i++){
+                // Check Q1
+                for(int i = round.index - startRound + 1; i < rounds.size() && i <= round.index - startRound + Main.q1 - 1; i++){
                     Round r = rounds.get(i);
                     if(!r.checkFirstConstraint(u, match)){
                         currentDistance -= u.removeFromMatch();
@@ -77,8 +84,8 @@ public class FastBranchAndBound implements Runnable {
                     }
                 }
 
-                // check Q2
-                for(int i = round.index + 1; i < rounds.size() && i <= round.index + Main.q2 - 1; i++){
+                // Check Q2
+                for(int i = round.index - startRound + 1; i < rounds.size() && i <= round.index - startRound + Main.q2 - 1; i++){
                     Round r = rounds.get(i);
                     if(!r.checkSecondConstraint(u, match)){
                         currentDistance -= u.removeFromMatch();
@@ -86,15 +93,19 @@ public class FastBranchAndBound implements Runnable {
                     }
                 }
 
-                // Commit changes
-                // remove selected umpire form other matches feasible umpires
+                // === COMMIT CHANGES === 
+                // Remove selected umpire form other matches feasible umpires
                 adjustedMatches = round.adjustSameRound(u, match);
-                for(int i = round.index + 1; i < rounds.size() && i <= round.index + Main.q1 - 1; i++){
+
+                // Adjust the fesaible umpires for the next Q1 rounds
+                for(int i = round.index - startRound + 1; i < rounds.size() && i <= round.index - startRound + Main.q1 - 1; i++){
                     Round r = rounds.get(i);
                     HashSet<Match> m = r.adjustFirstConstraint(u, match);
                     adjustedMatches.addAll(m);
                 }
-                for(int i = round.index + 1; i < rounds.size() && i <= round.index + Main.q2 - 1; i++){
+                
+                // Adjust the fesaible umpires for the next Q2 rounds
+                for(int i = round.index - startRound + 1; i < rounds.size() && i <= round.index - startRound + Main.q2 - 1; i++){
                     Round r = rounds.get(i);
                     HashSet<Match> m = r.adjustSecondConstraint(u, match);
                     adjustedMatches.addAll(m);
@@ -103,15 +114,6 @@ public class FastBranchAndBound implements Runnable {
                 branch(matchIndex+1); 
             }  
             else {
-                // Check all visited DOES NOT WORK
-                int roundsLeft = Main.nRounds - (round.index - startRound + 1);
-                for(Umpire umpire: umpires){
-                    if(!umpire.checkVisitingAllTeamsPossible(roundsLeft)){
-                        currentDistance -= u.removeFromMatch();
-                        continue umpireLoop;
-                    }
-                }
-
                 // Check if current distance is less than upper bound
                 if (currentDistance < upperBound) {
                     upperBound = currentDistance;

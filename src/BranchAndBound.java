@@ -42,8 +42,6 @@ public class BranchAndBound implements Runnable {
         return upperBound;
     }
     
-
-    // TODO aanpassen dat result gereturned wordt
     public void branch(int matchIndex) {
         Match match = matches.get(matchIndex);
         Round round = rounds.get(match.round);
@@ -86,7 +84,14 @@ public class BranchAndBound implements Runnable {
                     }
                 }
 
-                // TODO if we assign umpire but visited teams total is smaller then rounds left, abord early
+                // If we assign umpire but visited teams total is smaller then rounds left, abord early
+                int roundsLeft = Main.nRounds - (round.index + 1);
+                for(Umpire umpire: umpires){
+                    if(!umpire.checkVisitingAllTeamsPossible(roundsLeft)){
+                        currentDistance -= u.removeFromMatch();
+                        continue umpireLoop;
+                    }
+                }
 
                 // Commit changes
                 // remove selected umpire form other matches feasible umpires
@@ -113,10 +118,12 @@ public class BranchAndBound implements Runnable {
                         continue umpireLoop;
                     }
                 }
+
+                // TODO Localsearch when we have a solution that is feasible and better, maybe in other thread?
                 
 
                 // Check if current distance is less than upper bound
-                if (currentDistance < upperBound){
+                if(currentDistance < upperBound){
                     upperBound = currentDistance;
 
                     solutions = new ArrayList<>();

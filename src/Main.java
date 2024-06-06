@@ -27,6 +27,9 @@ public class Main {
 
         long startTime = System.currentTimeMillis();
 
+        // TODO Preprocessing, remove unfeasible edges (see paper)
+        // TODO Fix matches branching?
+
         // Fix de eerste ronde
         for (int i = 0; i < Main.n; i++) {
             LBumpires.get(i).addToMatch(LBmatches.get(i));
@@ -44,7 +47,6 @@ public class Main {
         
         branching.run();
 
-
         // Wait for the threads to finish
         branching.join();
 
@@ -52,8 +54,6 @@ public class Main {
         long endTime = System.currentTimeMillis();
         long totalTime = endTime - startTime;
         System.out.println("Total runtime branch and bound: " + totalTime + " milliseconds");
-
-        System.out.println("Nodes in branch and bound: " + branchAndBound.branchCounter);          //492000
 
         // Print the results
         branchAndBound.feasibilityCheck();

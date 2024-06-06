@@ -78,20 +78,22 @@ public class LowerBound implements Runnable{
         for(int k = 2; k < Main.nRounds; k++) {         // size of the subproblem+1
             //System.out.println("==== k = " + k + " ====");
             int r = Main.nRounds - 1 - k;                   // start round
+
+            // TODO Run all these in parallel
             while(r >= 1) {
-                //System.out.println("r = " + r);
                 for(int r0 = r + k - 2; r0 >= r; r0--) {
                     if(solutions[r0][r+k] != 0) continue;
 
                     // get subset of rounds and matches
-                    List<Round> roundsSubset = rounds.subList(r0, r + k); 
-                    List<Match> matchSubset = matches.subList(r0 * Main.n, (r + k) * Main.n); 
+                    List<Round> roundsSubset = rounds.subList(r0, r + k + 1); 
+                    List<Match> matchSubset = matches.subList(r0 * Main.n, (r + k + 1) * Main.n); 
 
                     reset();
-
-                    FastBranchAndBound branchAndBound = new FastBranchAndBound(this, r0, roundsSubset, matchSubset, umpires, teams);
+                    
+                    FastBranchAndBound branchAndBound = new FastBranchAndBound(this, r0, r+k, roundsSubset, matchSubset, umpires, teams);
                     branchAndBound.branch(0);
                     solutions[r0][r+k] = branchAndBound.getTotalDistance();
+
 
                     for(int r1=r0; r1>=0; r1--) {
                         for (int r2=r+k; r2<Main.nRounds; r2++) {
@@ -126,7 +128,7 @@ public class LowerBound implements Runnable{
         
         // Reset all matches
         for(Match m: matches) {
-            m.feasibleUmpires = new ArrayList<>(Main.umpires);
+            m.feasibleUmpires = new ArrayList<>(umpires);
         }
         
     }
