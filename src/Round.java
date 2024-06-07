@@ -5,7 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-public class Round {
+public class Round{
     public int index;
 
     public List<Match> matches = new ArrayList<>();
@@ -20,6 +20,19 @@ public class Round {
             locations.put(m.homeTeam, m);
             teams.put(m.homeTeam, m);
             teams.put(m.outTeam, m);
+        }
+    }
+
+    public Round(Round other, List<Match> newMatches) {
+        this.index = other.index;
+
+        for(Match m : newMatches) {
+            if(m.round == index) {
+                matches.add(m);
+                locations.put(m.homeTeam, m);
+                teams.put(m.homeTeam, m);
+                teams.put(m.outTeam, m);
+            }
         }
     }
 

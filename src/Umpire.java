@@ -2,7 +2,7 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Umpire {
+public class Umpire{
     public int id;
     public List<Match> matches = new ArrayList<>();
     public int[] visitedTeams = new int[Main.nTeams];

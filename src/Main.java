@@ -10,20 +10,15 @@ public class Main {
     static int nRounds;
     static int[][] dist;
 
-    static List<Round> rounds = new ArrayList<>();
-    static List<Match> matches = new ArrayList<>();
-    static List<Umpire> umpires = new ArrayList<>();
-    static List<Team> teams = new ArrayList<>();
-
-    static List<Round> LBrounds = new ArrayList<>();
-    static List<Match> LBmatches = new ArrayList<>();
-    static List<Umpire> LBumpires = new ArrayList<>();
-    static List<Team> LBteams = new ArrayList<>();
+    static Problem problem;
 
     public static void main(String[] args) throws FileNotFoundException, InterruptedException {
 
         // Read the file
-        readFile(file); 
+        problem = readFile(file); 
+
+        // Create the lower problem deep copy
+        Problem lowerProblem = problem.clone();
 
         long startTime = System.currentTimeMillis();
 
@@ -32,17 +27,17 @@ public class Main {
 
         // Fix de eerste ronde
         for (int i = 0; i < Main.n; i++) {
-            LBumpires.get(i).addToMatch(LBmatches.get(i));
-            LBmatches.get(i).addFeasibleUmpire(LBumpires.get(i));
+            lowerProblem.umpires.get(i).addToMatch(lowerProblem.matches.get(i));
+            lowerProblem.matches.get(i).addFeasibleUmpire(lowerProblem.umpires.get(i));
         }
 
         // Start thread for lowerbounds
-        LowerBound lowerBound = new LowerBound(LBrounds, LBmatches, LBumpires, LBteams);
+        LowerBound lowerBound = new LowerBound(problem);
         Thread lowerBounds = new Thread(lowerBound);
         lowerBounds.run();
 
         // Start new thread for branching
-        BranchAndBound branchAndBound = new BranchAndBound(lowerBound, rounds, matches, umpires, teams);
+        BranchAndBound branchAndBound = new BranchAndBound(lowerBound, problem);
         Thread branching = new Thread(branchAndBound);
         
         branching.run();
@@ -67,7 +62,7 @@ public class Main {
         }
     }
 
-    public static void readFile(String file) throws FileNotFoundException {
+    public static Problem readFile(String file) throws FileNotFoundException {
         Scanner sc = new Scanner(new File("Input/" + file + ".txt"));
 
         String line = removePadding(sc, "nTeams");
@@ -84,56 +79,47 @@ public class Main {
         int[][] opponents = parseArray(sc, (nTeams - 1) * 2);
 
         // Create all the teams
+        List<Team> teams = new ArrayList<>();
         for (int i=0; i<nTeams; i++) {
             Team t = new Team(i);
             Team LBt = new Team(i);
             teams.add(t);
-            LBteams.add(LBt);
         }
 
         // Create all the umpires
+        List<Umpire> umpires = new ArrayList<>();
         for(int i = 0; i < nTeams / 2; i++){
             Umpire u = new Umpire(i);
             Umpire LBu = new Umpire(i);
             umpires.add(u);
-            LBumpires.add(LBu);
         }
 
         // Read all the rounds/matches
-        matches = new ArrayList<>();
-        LBmatches = new ArrayList<>();
+        List<Round> rounds = new ArrayList<>();
+        List<Match> matches = new ArrayList<>();
         int round = 0;
         for(int[] opponentsRound: opponents) {
             // Create a list of matches for this round (skip the returning negative matches)
             List<Match> roundMatches = new ArrayList<>();
-            List<Match> LBroundMatches = new ArrayList<>();
-            
+
             for(int i = 0; i < opponentsRound.length; i++) {
                 int o = opponentsRound[i];
                 if(o < 0) continue;
 
                 Match m = new Match(round, teams.get(i), teams.get(o - 1), roundMatches.size());
-                Match LBm = new Match(round, LBteams.get(i), LBteams.get(o - 1), LBroundMatches.size());
                 roundMatches.add(m);
-                LBroundMatches.add(LBm);
                 matches.add(m);
-                LBmatches.add(LBm);
             }
             
             // Create a round object and add it to the list of rounds
             Round r = new Round(round, roundMatches);
-            Round LBr = new Round(round, LBroundMatches);
             rounds.add(r);
-            LBrounds.add(LBr);
             round++;
         }
-        
-        //Debug print the rounds
-        // for (Round r: rounds) {
-        //     System.out.println(r.toString());
-        // }
 
         sc.close();
+
+        return new Problem(rounds, matches, umpires, teams);
     }
 
     private static int[][] parseArray(Scanner scanner, int nTeams) {

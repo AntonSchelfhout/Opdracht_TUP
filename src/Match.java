@@ -1,7 +1,7 @@
 import java.util.ArrayList;
 import java.util.List;
 
-public class Match {
+public class Match{
     public int round;
     public Team homeTeam;
     public Team outTeam;
@@ -14,8 +14,15 @@ public class Match {
         this.homeTeam = homeTeam;
         this.outTeam = outTeam;
         this.index = index;
+    }
 
-        feasibleUmpires = new ArrayList<>(Main.umpires);
+    public Match(Match other, List<Umpire> umpires){
+        this.round = other.round;
+        this.homeTeam = other.homeTeam;
+        this.outTeam = other.outTeam;
+        this.index = other.index;
+
+        this.feasibleUmpires = new ArrayList<>(umpires);
     }
 
     public boolean isEmptyAfterRemove(Umpire u){

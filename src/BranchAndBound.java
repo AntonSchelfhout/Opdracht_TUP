@@ -13,24 +13,15 @@ public class BranchAndBound implements Runnable {
     int currentDistance = 0;
     LowerBound lowerBound;
     
-
-    List<Round> rounds;
-    List<Match> matches;
-    List<Umpire> umpires;
-    List<Team> teams;
+    Problem problem;
 
     List<Umpire> solutions;
 
     int checkedNodes = 0;
 
-    public BranchAndBound(LowerBound lowerBound, List<Round> rounds, List<Match> matches, List<Umpire> umpires, List<Team> teams) {
+    public BranchAndBound(LowerBound lowerBound, Problem problem) {
         this.lowerBound = lowerBound;
-  
-        // Copy construct the rounds, matches, umpires and teams
-        this.rounds = rounds;
-        this.matches = matches;
-        this.umpires = umpires;
-        this.teams = teams;
+        this.problem = problem;
     }
 
     @Override
@@ -43,8 +34,8 @@ public class BranchAndBound implements Runnable {
     }
     
     public void branch(int matchIndex) {
-        Match match = matches.get(matchIndex);
-        Round round = rounds.get(match.round);
+        Match match = problem.matches.get(matchIndex);
+        Round round = problem.rounds.get(match.round);
 
         // match.sortFeasibleUmpires();
 
@@ -63,21 +54,21 @@ public class BranchAndBound implements Runnable {
 
             // If not all matches are assigned umpires
             Set<Match> adjustedMatches = new HashSet<>();
-            if(matchIndex < matches.size()-1){
+            if(matchIndex < problem.matches.size()-1){
                 // Check constraints
                 if(!round.checkSameRound(u, match)){
                     currentDistance -= u.removeFromMatch();
                     continue umpireLoop;
                 }
-                for(int i = round.index + 1; i < rounds.size() && i <= round.index + Main.q1 - 1; i++){
-                    Round r = rounds.get(i);
+                for(int i = round.index + 1; i < problem.rounds.size() && i <= round.index + Main.q1 - 1; i++){
+                    Round r = problem.rounds.get(i);
                     if(!r.checkFirstConstraint(u, match)){
                         currentDistance -= u.removeFromMatch();
                         continue umpireLoop;
                     }
                 }
-                for(int i = round.index + 1; i < rounds.size() && i <= round.index + Main.q2 - 1; i++){
-                    Round r = rounds.get(i);
+                for(int i = round.index + 1; i < problem.rounds.size() && i <= round.index + Main.q2 - 1; i++){
+                    Round r = problem.rounds.get(i);
                     if(!r.checkSecondConstraint(u, match)){
                         currentDistance -= u.removeFromMatch();
                         continue umpireLoop;
@@ -86,7 +77,7 @@ public class BranchAndBound implements Runnable {
 
                 // If we assign umpire but visited teams total is smaller then rounds left, abord early
                 int roundsLeft = Main.nRounds - (round.index + 1);
-                for(Umpire umpire: umpires){
+                for(Umpire umpire: problem.umpires){
                     if(!umpire.checkVisitingAllTeamsPossible(roundsLeft)){
                         currentDistance -= u.removeFromMatch();
                         continue umpireLoop;
@@ -96,13 +87,13 @@ public class BranchAndBound implements Runnable {
                 // Commit changes
                 // remove selected umpire form other matches feasible umpires
                 adjustedMatches = round.adjustSameRound(u, match);
-                for(int i = round.index + 1; i < rounds.size() && i <= round.index + Main.q1 - 1; i++){
-                    Round r = rounds.get(i);
+                for(int i = round.index + 1; i < problem.rounds.size() && i <= round.index + Main.q1 - 1; i++){
+                    Round r = problem.rounds.get(i);
                     HashSet<Match> m = r.adjustFirstConstraint(u, match);
                     adjustedMatches.addAll(m);
                 }
-                for(int i = round.index + 1; i < rounds.size() && i <= round.index + Main.q2 - 1; i++){
-                    Round r = rounds.get(i);
+                for(int i = round.index + 1; i < problem.rounds.size() && i <= round.index + Main.q2 - 1; i++){
+                    Round r = problem.rounds.get(i);
                     HashSet<Match> m = r.adjustSecondConstraint(u, match);
                     adjustedMatches.addAll(m);
                 }
@@ -112,7 +103,7 @@ public class BranchAndBound implements Runnable {
             }  
             else{
                 // Check if each umpire visited each team's home -> sum visitedTeams has to be size teams for each umpire
-                for(Umpire umpire: umpires){
+                for(Umpire umpire: problem.umpires){
                     if(!umpire.checkAllVisited()) {
                         currentDistance -= u.removeFromMatch();
                         continue umpireLoop;
@@ -127,7 +118,7 @@ public class BranchAndBound implements Runnable {
                     upperBound = currentDistance;
 
                     solutions = new ArrayList<>();
-                    for(Umpire umpire: umpires){
+                    for(Umpire umpire: problem.umpires){
                         solutions.add(new Umpire(umpire));
                     }
                 }

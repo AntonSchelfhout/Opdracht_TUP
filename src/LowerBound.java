@@ -10,19 +10,13 @@ public class LowerBound implements Runnable{
     public int[][] solutions;       // matrix containing the values of solutions for the subproblems
     public int[][] lowerBounds;     // matrix containing the lower bounds for all pairs of rounds
 
-    List<Round> rounds = new ArrayList<>();
-    List<Match> matches = new ArrayList<>();
-    List<Umpire> umpires = new ArrayList<>();
-    List<Team> teams = new ArrayList<>();
+    Problem problem;
 
-    public LowerBound(List<Round> rounds, List<Match> matches, List<Umpire> umpires, List<Team> teams) {
+    public LowerBound(Problem problem) {
         this.solutions = new int[Main.nRounds][Main.nRounds];
         this.lowerBounds = new int[Main.nRounds][Main.nRounds];
 
-        this.rounds = rounds;
-        this.matches = matches;
-        this.umpires = umpires;
-        this.teams = teams;
+        this.problem = problem;
 
         for (int i=0; i<Main.nRounds; i++) {
             for (int j=0; j<Main.nRounds; j++) {
@@ -36,8 +30,8 @@ public class LowerBound implements Runnable{
         int[][] matrix = new int[Main.n][Main.n];
         for(int i = 0; i < Main.n; i++) {
             for (int j = 0; j < Main.n; j++) {
-                Match matchRound1 = Main.matches.get(Main.n*startRound+i);
-                Match matchRound2 = Main.matches.get(Main.n*(startRound+1)+j);
+                Match matchRound1 = problem.matches.get(Main.n*startRound+i);
+                Match matchRound2 = problem.matches.get(Main.n*(startRound+1)+j);
                 if(matchRound1.homeTeam.teamId == matchRound2.homeTeam.teamId || matchRound1.outTeam == matchRound2.outTeam || matchRound1.homeTeam == matchRound2.outTeam || matchRound1.outTeam == matchRound2.homeTeam){
                     matrix[i][j] = 999999;
                     continue;
@@ -52,8 +46,8 @@ public class LowerBound implements Runnable{
     public int calculateDistance(int[][] matrix, int startRound) {
         int cost = 0;
         for(int i = 0; i < Main.n; i++) {
-            Team teamRound1 = Main.matches.get(Main.n*startRound + matrix[i][0]).homeTeam;
-            Team teamRound2 = Main.matches.get(Main.n*(startRound+1) + matrix[i][1]).homeTeam;
+            Team teamRound1 = problem.matches.get(Main.n*startRound + matrix[i][0]).homeTeam;
+            Team teamRound2 = problem.matches.get(Main.n*(startRound+1) + matrix[i][1]).homeTeam;
             cost += Main.dist[teamRound1.teamId][teamRound2.teamId];
         }
         return cost;
@@ -76,7 +70,6 @@ public class LowerBound implements Runnable{
 
         // calculate lower bounds for bigger subproblems
         for(int k = 2; k < Main.nRounds; k++) {         // size of the subproblem+1
-            //System.out.println("==== k = " + k + " ====");
             int r = Main.nRounds - 1 - k;                   // start round
 
             // TODO Run all these in parallel
@@ -85,15 +78,14 @@ public class LowerBound implements Runnable{
                     if(solutions[r0][r+k] != 0) continue;
 
                     // get subset of rounds and matches
-                    List<Round> roundsSubset = rounds.subList(r0, r + k + 1); 
-                    List<Match> matchSubset = matches.subList(r0 * Main.n, (r + k + 1) * Main.n); 
+                    List<Round> roundsSubset = problem.rounds.subList(r0, r + k + 1); 
+                    List<Match> matchSubset = problem.matches.subList(r0 * Main.n, (r + k + 1) * Main.n); 
 
-                    reset();
+                    Problem problemSubset = new Problem(roundsSubset, matchSubset, problem.umpires, problem.teams);
                     
-                    FastBranchAndBound branchAndBound = new FastBranchAndBound(this, r0, r+k, roundsSubset, matchSubset, umpires, teams);
-                    branchAndBound.branch(0);
+                    FastBranchAndBound branchAndBound = new FastBranchAndBound(this, r0, r+k, problemSubset);
+                    branchAndBound.branch(0); 
                     solutions[r0][r+k] = branchAndBound.getTotalDistance();
-
 
                     for(int r1=r0; r1>=0; r1--) {
                         for (int r2=r+k; r2<Main.nRounds; r2++) {
@@ -104,32 +96,10 @@ public class LowerBound implements Runnable{
                 r -= k;
             }  
         }
-
-        // DEBUG print matrix
-        // for(int i=0; i<Main.nRounds; i++) {
-        //     for (int j=0; j<Main.nRounds; j++) {
-        //         System.out.print(lowerBounds[i][j] + "    ");
-        //     }
-        //     System.out.println(" ");
-        // }
     }
 
     @Override
     public void run() {
         calculateLowerBounds();
-    }
-
-    public void reset() {
-        // Reset all umpires
-        for(Umpire u: umpires) {
-            u.matches = new ArrayList<>();
-            u.visitedTeams = new int[Main.nTeams];
-        }
-        
-        // Reset all matches
-        for(Match m: matches) {
-            m.feasibleUmpires = new ArrayList<>(umpires);
-        }
-        
     }
 }
