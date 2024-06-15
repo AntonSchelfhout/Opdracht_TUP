@@ -26,7 +26,31 @@ public class BranchAndBound implements Runnable {
 
     @Override
     public void run() {
-        branch(0);
+        long startTime = System.currentTimeMillis();
+
+        // Fix the first round
+        for(int i = 0; i < Main.n; i++){
+            Match match = problem.matches.get(i);
+            Umpire umpire = problem.umpires.get(i);
+            currentDistance += umpire.addToMatch(match);
+
+            // Adjust feasible umpires for the next rounds
+            problem.rounds.get(0).adjustSameRound(umpire, match);
+            for(int j = 1; j < Main.q1; j++){
+                Round round = problem.rounds.get(j);
+                round.adjustFirstConstraint(umpire, match);
+            }
+            for(int j = 1; j < Main.q2; j++){
+                Round round = problem.rounds.get(j);
+                round.adjustSecondConstraint(umpire, match);
+            }
+        }
+
+        branch(Main.n);
+
+        long endTime = System.currentTimeMillis();
+        long totalTime = endTime - startTime;
+        System.out.println("BRANCHNG: " + totalTime + "");
     }
 
     public int getTotalDistance() {
@@ -41,20 +65,34 @@ public class BranchAndBound implements Runnable {
 
         umpireLoop: for(Umpire u: match.feasibleUmpires){ 
 
-            checkedNodes++;
-
             // Assign umpire to match
-            currentDistance += u.addToMatch(match);
+            int addDistance = u.addToMatch(match);
+            currentDistance += addDistance;
 
             // Prune if current distance is already greater than upper bound
-            if(currentDistance + lowerBound.lowerBounds[round.index][Main.nRounds - 1] >= upperBound) {
+            // Partial matching
+            int remainingDistance = 0;
+            if(currentDistance + remainingDistance + lowerBound.lowerBounds[round.index][Main.nRounds - 1] >= upperBound) {
                 currentDistance -= u.removeFromMatch();
                 continue umpireLoop;
             }
 
+
+            // TODO: even when a umpire can't do all rounds now, like if it's the last round and i still need to visit 2 more teams,
+            // then we know that we must visit that team now and in the next round also, so just lock both of them in already
+            int roundsLeft = Main.nRounds - (round.index + 1);
+            int teamsNotVisited = u.getTeamsNotVisited();
+            if(teamsNotVisited > roundsLeft){
+                currentDistance -= u.removeFromMatch();
+                continue umpireLoop;
+            }
+
+            checkedNodes++;
+
             // If not all matches are assigned umpires
             Set<Match> adjustedMatches = new HashSet<>();
             if(matchIndex < problem.matches.size()-1){
+
                 // Check constraints
                 if(!round.checkSameRound(u, match)){
                     currentDistance -= u.removeFromMatch();
@@ -75,15 +113,6 @@ public class BranchAndBound implements Runnable {
                     }
                 }
 
-                // If we assign umpire but visited teams total is smaller then rounds left, abord early
-                int roundsLeft = Main.nRounds - (round.index + 1);
-                for(Umpire umpire: problem.umpires){
-                    if(!umpire.checkVisitingAllTeamsPossible(roundsLeft)){
-                        currentDistance -= u.removeFromMatch();
-                        continue umpireLoop;
-                    }
-                }
-
                 // Commit changes
                 // remove selected umpire form other matches feasible umpires
                 adjustedMatches = round.adjustSameRound(u, match);
@@ -99,7 +128,7 @@ public class BranchAndBound implements Runnable {
                 }
 
                 // Branch and bound to next match
-                branch(matchIndex+1); 
+                branch(matchIndex+1);
             }  
             else{
                 // Check if each umpire visited each team's home -> sum visitedTeams has to be size teams for each umpire
@@ -142,14 +171,6 @@ public class BranchAndBound implements Runnable {
             }
         }
 
-        // Print the formattedSolution
-        // for(int i = 0; i < Main.nRounds; i++){
-        //     for(int j = 0; j < Main.n; j++){
-        //         System.out.print(formattedSolution[i][j] + " ");
-        //     }
-        //     System.out.println();
-        // }
-
         // Check if a umpire doesn't go to 2 or more matches at the same time
         for(int i = 0; i < Main.nRounds; i++){
             for(int j = 0; j < Main.n; j++){
@@ -187,7 +208,7 @@ public class BranchAndBound implements Runnable {
                     if(m1 == m2) continue;
 
                     if(m1.homeTeam.teamId == m2.homeTeam.teamId) {
-                        System.out.println("ERROR: Umpire " + u.id + " visits same location in Q1 in round");
+                        System.out.println("ERROR: Umpire " + u.id + " visits same location in Q1 in round " + i);
                     }
                 }
             }
@@ -209,7 +230,7 @@ public class BranchAndBound implements Runnable {
                     int outTeam2 = m2.outTeam.teamId;
 
                     if(homeTeam1 == homeTeam2 || homeTeam1 == outTeam2 || outTeam1 == homeTeam2 || outTeam1 == outTeam2){
-                        System.out.println("ERROR: Umpire " + u.id + " hosts same team in Q2");
+                        System.out.println("ERROR: Umpire " + u.id + " hosts same team in Q2 in round " + i);
                     }
                 }
             }

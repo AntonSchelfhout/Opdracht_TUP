@@ -56,7 +56,7 @@ public class Umpire{
     }
 
     // for fast branch and bound
-    public boolean checkVisitingAllTeamsPossible(int roundsLeft){
+    public int getTeamsNotVisited(){
         // Check if it is possible to visit all teams in the remaining rounds
         int notVisitedTeams = 0;
         for(int i = 0; i < Main.nTeams; i++){
@@ -65,7 +65,7 @@ public class Umpire{
             }
         }
 
-        return notVisitedTeams <= roundsLeft;
+        return notVisitedTeams;
     }
 
     @Override

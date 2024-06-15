@@ -20,27 +20,19 @@ public class Main {
         // Create the lower problem deep copy
         Problem lowerProblem = problem.clone();
 
+        // TODO Preprocessing, remove unfeasible edges (see paper)
         long startTime = System.currentTimeMillis();
 
-        // TODO Preprocessing, remove unfeasible edges (see paper)
-        // TODO Fix matches branching?
-
-        // Fix de eerste ronde
-        for (int i = 0; i < Main.n; i++) {
-            lowerProblem.umpires.get(i).addToMatch(lowerProblem.matches.get(i));
-            lowerProblem.matches.get(i).addFeasibleUmpire(lowerProblem.umpires.get(i));
-        }
-
         // Start thread for lowerbounds
-        LowerBound lowerBound = new LowerBound(problem);
+        LowerBound lowerBound = new LowerBound(lowerProblem);
         Thread lowerBounds = new Thread(lowerBound);
-        lowerBounds.run();
+        lowerBounds.start();
 
+        
         // Start new thread for branching
         BranchAndBound branchAndBound = new BranchAndBound(lowerBound, problem);
         Thread branching = new Thread(branchAndBound);
-        
-        branching.run();
+        branching.start();
 
         // Wait for the threads to finish
         branching.join();

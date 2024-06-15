@@ -31,7 +31,30 @@ public class FastBranchAndBound implements Runnable {
 
     @Override
     public void run() {
-        branch(0);
+        // Fix the first round
+        for(int i = 0; i < Main.n; i++){
+            Match match = problem.matches.get(i);
+            Umpire umpire = problem.umpires.get(i);
+            currentDistance += umpire.addToMatch(match);
+
+            // Adjust feasible umpires for the next rounds
+            problem.rounds.get(0).adjustSameRound(umpire, match);
+            for(int j = 1; j < Main.q1 && j < problem.rounds.size(); j++){
+                Round round = problem.rounds.get(j);
+                round.adjustFirstConstraint(umpire, match);
+            }
+            for(int j = 1; j < Main.q2 && j < problem.rounds.size(); j++){
+                Round round = problem.rounds.get(j);
+                round.adjustSecondConstraint(umpire, match);
+            }
+        }
+
+        branch(Main.n);
+    }
+
+    public int solveSubproblem(int match) {
+        branch(match);
+        return upperBound;
     }
 
     public int getTotalDistance() {

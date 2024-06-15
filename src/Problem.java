@@ -44,4 +44,11 @@ public class Problem implements Cloneable{
 
         return new Problem(newRounds, newMatches, newUmpires, teams);
     }
+
+    public Problem cloneSubset(List<Round> roundsSubset, List<Match> matchesSubset) {
+        Problem problem = new Problem(roundsSubset, matchesSubset, umpires, teams);
+        problem = problem.clone();
+        
+        return problem;
+    }
 }
