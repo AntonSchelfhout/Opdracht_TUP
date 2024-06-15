@@ -55,10 +55,6 @@ public class Match{
         });
     }
 
-    public void setAsigned(boolean b) {
-        isAsigned = b;
-    }
-
     @Override
     public String toString() {
         return "Match{" +

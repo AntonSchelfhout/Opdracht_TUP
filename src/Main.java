@@ -111,22 +111,6 @@ public class Main {
 
         sc.close();
 
-        BranchAndBound program = new BranchAndBound();
-        program.branchAndBound(0, 0);
-
-        for (Umpire umpire: umpires) {
-            System.out.println("assignments for umpire " + umpire.id);
-            System.out.println(umpire.assignedMatchesToString());
-        }
-
-        BranchAndBound program = new BranchAndBound();
-        program.branchAndBound(0, 0);
-
-        for (Umpire umpire: umpires) {
-            System.out.println("assignments for umpire " + umpire.id);
-            System.out.println(umpire.assignedMatchesToString());
-        }
-
         return new Problem(rounds, matches, umpires, teams);
     }
 
