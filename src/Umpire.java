@@ -2,101 +2,76 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Umpire {
+public class Umpire{
     public int id;
-    public ArrayList<Match> assignedMatches;    // index = round, element on index = assigned match for that round
-    public ArrayList<Match> feasibleMatches;
-    public ArrayList<Match[]> historyFeasibleMatches;
+    public List<Match> matches = new ArrayList<>();
+    public int[] visitedTeams = new int[Main.nTeams];
 
     public Umpire(int id) {
         this.id = id;
-        assignedMatches = new ArrayList<>(8);
-        feasibleMatches = new ArrayList<>();
-        historyFeasibleMatches = new ArrayList<>(Main.nRounds);
+        this.visitedTeams = new int[Main.nTeams];
     }
 
-    // Homelocatie
-    public boolean isFeasibleC1(Match m) {
-        if (m.round-Main.q1 < 0) return true;
+    public Umpire(Umpire other) {
+        this.id = other.id;
+        this.matches = new ArrayList<>(other.matches);
+        this.visitedTeams = other.visitedTeams.clone();
+    }
 
-        // if m contains the same teams as the previously assigned matches, don't allow
-        for (int i = m.round-1; i > m.round - Main.q1; i--) {
-            if (assignedMatches.get(i).homeTeam == m.homeTeam) {
-                return false;
+    public int addToMatch(Match m){
+        visitedTeams[m.homeTeam.teamId]++;
+        matches.add(m);
+
+        if(matches.size() == 1){
+            return 0;
+        }
+
+        Match prevMatch = matches.get(matches.size() - 2);
+        return Main.dist[prevMatch.homeTeam.teamId][m.homeTeam.teamId];
+    }
+
+    public int removeFromMatch(){
+        Match m = matches.getLast();
+        visitedTeams[m.homeTeam.teamId]--;
+        Match removedMatch = matches.removeLast();
+
+        if(matches.size() == 0){
+            return 0;
+        }
+
+        Match prevMatch = matches.getLast();
+        return Main.dist[prevMatch.homeTeam.teamId][removedMatch.homeTeam.teamId];
+    }
+
+    // for branch and bound
+    public boolean checkAllVisited(){
+        // Check if visitedTeams contains Main.nTeams diffrent teams
+        int sum = 0;
+        for(int i = 0; i < Main.nTeams; i++){
+            if(visitedTeams[i] > 0){
+                sum++;
             }
         }
-        return true;
+        return sum == Main.nTeams;
     }
 
-
-    public boolean isFeasibleC1_2(Match m) {
-        int index = m.round - 1;
-
-        while (index >= 0 && index >= m.round - Main.q1) {
-            if (assignedMatches.get(index).homeTeam == m.homeTeam) {
-                return false;
-            }
-            index--;
-        }
-        return true;
-    }
-
-
-
-
-    // Teams
-    public boolean isFeasibleC2(Match m) {
-        // in the beginning we can always allow
-        if (m.round-Main.q2 < 0) return true;
-
-        // if m contains the same teams as the previously assigned matches, don't allow
-        for (int i = m.round-1; i > m.round - Main.q2; i--) {
-            if (assignedMatches.get(i).containsTeamsOfRound(m)) {
-                return false;
+    // for fast branch and bound
+    public int getTeamsNotVisited(){
+        // Check if it is possible to visit all teams in the remaining rounds
+        int notVisitedTeams = 0;
+        for(int i = 0; i < Main.nTeams; i++){
+            if(visitedTeams[i] <= 0){
+                notVisitedTeams++;
             }
         }
-        return true;
-    }
 
-    // Assign a match to this umpire
-    public void assignMatch(Match m) {
-        assignedMatches.add(m);
-        m.isAsigned = true;
-        BranchAndBound.currentDistance += Main.dist[m.homeTeam.teamId][m.outTeam.teamId];
-    }
-
-    public void unAssignMatch(Match m) {
-        assignedMatches.remove(m);
-        m.isAsigned = false;
-        BranchAndBound.currentDistance -= Main.dist[m.homeTeam.teamId][m.outTeam.teamId];
-    }
-
-
-    public void getFeasibleMatches(int round){
-        for(int i = round; i < Main.nRounds; i++) {
-            List<Match> matchRound = Main.matches.get(i);
-            for(Match m : matchRound) {
-
-            }
-        }
-    }
-
-    // Add current feasiblematches to history datastructure for fast backtracking
-    public void addFeasibleMatchesToHistory(int round) {
-        Match[] history = (Match[]) feasibleMatches.toArray();
-        historyFeasibleMatches.add(round, history);
+        return notVisitedTeams;
     }
 
     @Override
     public String toString() {
-        //for (int i = 0; i < assignedMatches.size(); i++)
-
-
         return "Umpire{" +
                 "id=" + id +
-                ", assignedMatches=" + assignedMatches +
-                ", feasibleMatches=" + feasibleMatches +
-                ", historyFeasibleMatches=" + historyFeasibleMatches +
                 '}';
     }
 
