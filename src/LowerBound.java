@@ -49,9 +49,14 @@ public class LowerBound implements Runnable{
     public int calculateDistance(int[][] matrix, int startRound) {
         int cost = 0;
         for(int i = 0; i < Main.n; i++) {
-            Team teamRound1 = problem.matches.get(Main.n*startRound + matrix[i][0]).homeTeam;
-            Team teamRound2 = problem.matches.get(Main.n*(startRound+1) + matrix[i][1]).homeTeam;
-            cost += Main.dist[teamRound1.teamId][teamRound2.teamId];
+            Match matchRound1 = problem.matches.get(Main.n*startRound + matrix[i][0]);
+            Match matchRound2 = problem.matches.get(Main.n*(startRound+1) + matrix[i][1]);
+            Team teamRound1 = matchRound1.homeTeam;
+            Team teamRound2 = matchRound2.homeTeam;
+
+            int dist = Main.dist[teamRound1.teamId][teamRound2.teamId];
+
+            cost += dist;
         }
         return cost;
     }

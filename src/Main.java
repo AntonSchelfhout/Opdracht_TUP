@@ -11,6 +11,7 @@ public class Main {
     static int[][] dist;
 
     static Problem problem;
+    static int[][] minimalDistances; // matrix containing the minimal umpire distances for all rounds
 
     public static void main(String[] args) throws FileNotFoundException, InterruptedException {
 
@@ -28,6 +29,8 @@ public class Main {
         Thread lowerBounds = new Thread(lowerBound);
         lowerBounds.start();
 
+        // Small X seconds delay to make sure the lower bounds are calculated
+        Thread.sleep(50);
         
         // Start new thread for branching
         BranchAndBound branchAndBound = new BranchAndBound(lowerBound, problem);
@@ -74,7 +77,6 @@ public class Main {
         List<Team> teams = new ArrayList<>();
         for (int i=0; i<nTeams; i++) {
             Team t = new Team(i);
-            Team LBt = new Team(i);
             teams.add(t);
         }
 
@@ -82,7 +84,6 @@ public class Main {
         List<Umpire> umpires = new ArrayList<>();
         for(int i = 0; i < nTeams / 2; i++){
             Umpire u = new Umpire(i);
-            Umpire LBu = new Umpire(i);
             umpires.add(u);
         }
 
@@ -110,6 +111,27 @@ public class Main {
         }
 
         sc.close();
+
+        // Calculate the minimal distances between matches
+        int[][] md = new int[nRounds][n];
+        for(int i = 1; i < nRounds; i++){
+            for(int j = 0; j < n; j++){
+                Match matchRound1 = matches.get(n*i+j);
+                int minDist = Integer.MAX_VALUE;
+                for(int k = 0; k < n; k++){
+                    Match matchRound2 = matches.get(n*(i-1)+k);
+                    if(matchRound1.homeTeam.teamId == matchRound2.homeTeam.teamId || matchRound1.outTeam == matchRound2.outTeam || matchRound1.homeTeam == matchRound2.outTeam || matchRound1.outTeam == matchRound2.homeTeam){
+                        continue;
+                    }
+                    minDist = Math.min(minDist, dist[matchRound2.homeTeam.teamId][matchRound1.homeTeam.teamId]);
+                }
+
+                for(int k = 0; k < j; k++){
+                    md[i][k] += minDist;
+                }
+            }
+        }
+        minimalDistances = md;
 
         return new Problem(rounds, matches, umpires, teams);
     }

@@ -52,10 +52,6 @@ public class FastBranchAndBound implements Runnable {
         branch(Main.n);
     }
 
-    public int solveSubproblem(int match) {
-        branch(match);
-        return upperBound;
-    }
 
     public int getTotalDistance() {
         return upperBound;
@@ -66,17 +62,17 @@ public class FastBranchAndBound implements Runnable {
         Match match = problem.matches.get(matchIndex);
         Round round = problem.rounds.get(match.round - startRound);
 
-        match.sortFeasibleUmpires();
+        // FOR SOME REASON SORTING RESULTS IN DOUBLE THE VISITED NODES?
+        //match.sortFeasibleUmpires();
     
         umpireLoop: for(Umpire u: match.feasibleUmpires) { 
 
             // Assign umpire to match
             currentDistance += u.addToMatch(match);
 
-            
-            // TODO Partial matching (also add minimum distance for all remaining matches and umpires in this round)
             // Prune if current distance is already greater than upper bound
-            if(currentDistance + lowerBound.lowerBounds[round.index][endRound] >= upperBound) {  
+            int partialDistance = Main.minimalDistances[round.index][matchIndex % Main.n];
+            if(currentDistance + partialDistance + lowerBound.lowerBounds[round.index][endRound] >= upperBound) {  
                 currentDistance -= u.removeFromMatch();
                 continue umpireLoop;
             }

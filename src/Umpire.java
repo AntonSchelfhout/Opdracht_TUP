@@ -75,14 +75,4 @@ public class Umpire{
                 '}';
     }
 
-    public String assignedMatchesToString() {
-
-
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < assignedMatches.size(); i++) {
-            sb.append("Round ").append(i).append(": ").append(assignedMatches.get(i).toString()).append(" \n");
-        }
-        sb.append("\n");
-        return sb.toString();
-    }
 }

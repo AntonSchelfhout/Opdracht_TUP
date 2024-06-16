@@ -63,6 +63,7 @@ public class BranchAndBound implements Runnable {
         Match match = problem.matches.get(matchIndex);
         Round round = problem.rounds.get(match.round);
 
+        // FOR SOME REASON SORTING RESULTS IN DOUBLE THE VISITED NODES?
         // match.sortFeasibleUmpires();
 
         umpireLoop: for(Umpire u: match.feasibleUmpires){ 
@@ -73,12 +74,11 @@ public class BranchAndBound implements Runnable {
 
             // Prune if current distance is already greater than upper bound
             // Partial matching
-            int remainingDistance = 0;
-            if(currentDistance + remainingDistance + lowerBound.lowerBounds[round.index][Main.nRounds - 1] >= upperBound) {
+            int partialDistance = Main.minimalDistances[round.index][matchIndex % Main.n];
+            if(currentDistance + partialDistance + lowerBound.lowerBounds[round.index][Main.nRounds - 1] >= upperBound) {
                 currentDistance -= u.removeFromMatch();
                 continue umpireLoop;
             }
-
 
             // TODO: even when a umpire can't do all rounds now, like if it's the last round and i still need to visit 2 more teams,
             // then we know that we must visit that team now and in the next round also, so just lock both of them in already
@@ -131,6 +131,7 @@ public class BranchAndBound implements Runnable {
 
                 // Branch and bound to next match
                 branch(matchIndex+1);
+                
             }  
             else{
                 // Check if each umpire visited each team's home -> sum visitedTeams has to be size teams for each umpire
