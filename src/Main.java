@@ -58,7 +58,7 @@ public class Main {
     }
 
     public static Problem readFile(String file) throws FileNotFoundException {
-        Scanner sc = new Scanner(new File("Input/" + file + ".txt"));
+        Scanner sc = new Scanner(new File("C:/Users/joffr/Documents/4de_jaar/Geavanceerde_AI/TUP/Opdracht_TUP/Input/" + file + ".txt"));
 
         String line = removePadding(sc, "nTeams");
         assert line != null;

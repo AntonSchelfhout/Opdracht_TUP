@@ -144,15 +144,23 @@ public class BranchAndBound implements Runnable {
 
                 // TODO Localsearch when we have a solution that is feasible and better, maybe in other thread?
                 
+                
 
                 // Check if current distance is less than upper bound
                 if(currentDistance < upperBound){
+                    // Localsearch
+                    
+
+
                     upperBound = currentDistance;
 
                     solutions = new ArrayList<>();
                     for(Umpire umpire: problem.umpires){
                         solutions.add(new Umpire(umpire));
                     }
+
+                    LocalSearch localSearch = new LocalSearch(solutions, problem);
+                    localSearch.search();
                 }
             }
             
