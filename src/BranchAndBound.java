@@ -64,8 +64,6 @@ public class BranchAndBound implements Runnable {
     }
     
     public void branch(int matchIndex) {
-        boolean temp = true;
-
         Match match = problem.matches.get(matchIndex);
         Round round = problem.rounds.get(match.round);
 
@@ -97,7 +95,7 @@ public class BranchAndBound implements Runnable {
 
             checkedNodes++;
 
-            // If not all matches are assigned umpires
+            // If not all matches are assigned to umpires
             Set<Match> adjustedMatches = new HashSet<>();
             if(matchIndex < problem.matches.size()-1){
 
@@ -148,7 +146,6 @@ public class BranchAndBound implements Runnable {
                     }
                 }
 
-
                 // Check if current distance is less than upper bound
                 if(currentDistance < upperBound){
                     upperBound = currentDistance;
@@ -158,20 +155,22 @@ public class BranchAndBound implements Runnable {
                         solutions.add(new Umpire(umpire));
                     }
 
-                    LocalSearch localSearch = new LocalSearch(solutions, problem.clone(), currentDistance, solutionQueue);
-                    Thread localSearchThread = new Thread(localSearch);
-                    localSearchThread.start();
+                    // LocalSearch
+                    // LocalSearch localSearch = new LocalSearch(solutions, problem.clone(), currentDistance, solutionQueue);
+                    // Thread localSearchThread = new Thread(localSearch);
+                    // localSearchThread.start();
 
-                    Solution newSolution;
-                    while ((newSolution = solutionQueue.poll()) != null) {
-                        if (calculateDistance(newSolution.umpires) < currentDistance) {
-                            solutions = newSolution.umpires;
-                            int newDistance = calculateDistance(solutions);
-                            int delta = currentDistance - newDistance;
-                            System.out.println("Verbetering: " + delta);
-                            currentDistance = newDistance;
-                        }
-                    }
+                    // // Need to check if localsearch solution is better then the current solution
+                    // Solution newSolution;
+                    // while ((newSolution = solutionQueue.poll()) != null) {
+                    //     if (calculateDistance(newSolution.umpires) < currentDistance) {
+                    //         solutions = newSolution.umpires;
+                    //         int newDistance = calculateDistance(solutions);
+                    //         int delta = currentDistance - newDistance;
+                    //         // System.out.println("Verbetering: " + delta);
+                    //         currentDistance = newDistance;
+                    //     }
+                    // }
                 }
             }
             
@@ -272,6 +271,11 @@ public class BranchAndBound implements Runnable {
             }
         }
         String result = sb.toString();
+
+        System.out.println("--------------------");
+        System.out.println("Nodes: " + checkedNodes);
+        System.out.println("Our distance: " + upperBound);
+        System.out.println("--------------------");
 
         // Create output.txt for validator
         try {
