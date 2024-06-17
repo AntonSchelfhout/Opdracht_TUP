@@ -9,8 +9,12 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
+
 
 public class BranchAndBound implements Runnable {
+    ConcurrentLinkedQueue<Solution> solutionQueue = new ConcurrentLinkedQueue<>();
     int upperBound = Integer.MAX_VALUE;
     int currentDistance = 0;
     LowerBound lowerBound;
@@ -154,17 +158,20 @@ public class BranchAndBound implements Runnable {
                         solutions.add(new Umpire(umpire));
                     }
 
-                    LocalSearch localSearch = new LocalSearch(solutions, problem);
-                    boolean newSolution = localSearch.search(currentDistance);
+                    LocalSearch localSearch = new LocalSearch(solutions, problem.clone(), currentDistance, solutionQueue);
+                    Thread localSearchThread = new Thread(localSearch);
+                    localSearchThread.start();
 
-                    if (newSolution) {
-                        solutions = localSearch.getBestSolution();
-                        int newDistance = calculateDistance(solutions);
-                        int delta = currentDistance - newDistance;
-                        System.out.println("Verbetering: " + delta);
-                        currentDistance = newDistance;
+                    Solution newSolution;
+                    while ((newSolution = solutionQueue.poll()) != null) {
+                        if (calculateDistance(newSolution.umpires) < currentDistance) {
+                            solutions = newSolution.umpires;
+                            int newDistance = calculateDistance(solutions);
+                            int delta = currentDistance - newDistance;
+                            System.out.println("Verbetering: " + delta);
+                            currentDistance = newDistance;
+                        }
                     }
-                    
                 }
             }
             
@@ -172,118 +179,10 @@ public class BranchAndBound implements Runnable {
             currentDistance -= u.removeFromMatch();
             for(Match m: adjustedMatches){
                 m.addFeasibleUmpire(u);
-
             }
         }
     }
 
-    public void tempCheck(List<Umpire> solutions){
-        // Generating matrix
-        int[][] formattedSolution = new int[Main.nRounds][Main.n];
-        for(Umpire u: solutions){
-            for(Match m: u.matches){
-                formattedSolution[m.round][m.index] = u.id;
-            }
-        }
-
-        // Check if a umpire doesn't go to 2 or more matches at the same time
-        for(int i = 0; i < Main.nRounds; i++){
-            for(int j = 0; j < Main.n; j++){
-                for(int k = j + 1; k < Main.n; k++){
-                    if(formattedSolution[i][j] == formattedSolution[i][k]){
-                        System.out.println("ERROR: Umpire " + formattedSolution[i][j] + " goes to match " + j + " and " + k + " at the same time");
-                    }
-                }
-            }
-        }
-
-        // Check if a umpire visits every team's home once
-        for(Umpire u : solutions) {
-            int[] visitedTeams = new int[Main.nTeams];
-            for(int i = 0; i < Main.nRounds; i++) {
-                Match m = u.matches.get(i);
-                visitedTeams[m.homeTeam.teamId] = 1;
-            }
-
-            for(int i = 0; i < Main.nTeams; i++) {
-                if(visitedTeams[i] == 0) {
-                    System.out.println("ERROR: Umpire " + u.id + " does not visit team " + i + "'s home");
-                }
-            }
-        }
-        
-        // Check Q1 constraint, same location not visited
-        for(Umpire u : solutions) {
-            for(int i = 0; i < Main.nRounds; i++) {
-                Match m1 = u.matches.get(i);
-
-                for(int j = i + 1; j < Main.q1 - 1; j++) {
-                    Match m2 = u.matches.get(j);
-
-                    if(m1 == m2) continue;
-
-                    if(m1.homeTeam.teamId == m2.homeTeam.teamId) {
-                        System.out.println("ERROR: Umpire " + u.id + " visits same location in Q1 in round " + i);
-                    }
-                }
-            }
-        }
-
-        // Check Q2 constraint, teams not visited 
-        for(Umpire u : solutions) {
-            for(int i = 0; i < Main.nRounds; i++) {
-                Match m1 = u.matches.get(i);
-                int homeTeam1 = m1.homeTeam.teamId;
-                int outTeam1 = m1.outTeam.teamId;
-
-                for(int j = i + 1; j < Main.q2 - 1; j++) {
-                    Match m2 = u.matches.get(i);
-
-                    if(m1 == m2) continue;
-
-                    int homeTeam2 = m2.homeTeam.teamId;
-                    int outTeam2 = m2.outTeam.teamId;
-
-                    if(homeTeam1 == homeTeam2 || homeTeam1 == outTeam2 || outTeam1 == homeTeam2 || outTeam1 == outTeam2){
-                        System.out.println("ERROR: Umpire " + u.id + " hosts same team in Q2 in round " + i);
-                    }
-                }
-            }
-        }
-
-        // Create validator output
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < Main.nRounds; i++) {
-            for (int j = 0; j < Main.n; j++) {
-                sb.append(formattedSolution[i][j] + 1);
-                if (j < Main.n - 1) {
-                    sb.append(",");
-                }
-            }
-            if (i < Main.nRounds - 1) {
-                sb.append(",");
-            }
-        }
-        String result = sb.toString();
-
-        // Create output.txt for validator
-        try {
-            java.io.FileWriter myWriter = new java.io.FileWriter("output.txt");
-            myWriter.write(result);
-            myWriter.close();
-        } catch (Exception e) {
-            System.out.println("An error occurred.");
-            e.printStackTrace();
-        }   
-
-        // Run validator
-        String command = "java -jar validator.jar Input/"+ Main.file +".txt "+ Main.q1+" "+ Main.q2 + " output.txt";
-        try {
-            executeCommand(command);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 
     public void feasibilityCheck(){
         // Generating matrix
@@ -402,7 +301,6 @@ public class BranchAndBound implements Runnable {
                 Match prevMatch = umpire.matches.get(i - 1);
 
                 distance += Main.dist[prevMatch.homeTeam.teamId][currentMatch.homeTeam.teamId];
-
             }
         }
         return distance;

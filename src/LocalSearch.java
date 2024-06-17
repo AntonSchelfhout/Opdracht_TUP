@@ -1,21 +1,57 @@
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.net.MalformedURLException;
 
-public class LocalSearch {
+public class LocalSearch implements Runnable {
     private List<Umpire> bestSolution;
     private Problem problem;
     private int violationPenalty;
+    private int currentDistance;
+    private ConcurrentLinkedQueue<Solution> queue;
 
-    LocalSearch(List<Umpire> s, Problem p) {
+    LocalSearch(List<Umpire> s, Problem p, int c, ConcurrentLinkedQueue<Solution> q) {
         this.bestSolution = s;
         this.problem = p;
         this.violationPenalty = 1000;
+        this.currentDistance = c;
+        this.queue = q;
     }
 
     public List<Umpire> getBestSolution() {
         return this.bestSolution;
     }
+
+
+    public void search() {
+        boolean improvement = true;
+        boolean newSolution = false;
+        int currenCost = currentDistance;
+        
+        while (improvement) {
+            improvement = false;
+            ArrayList<List<Umpire>> neighborhood = generateNeighborhood();
+            // int currenCost = calculateCost(bestSolution);
+
+            for (List<Umpire> neighbour: neighborhood) {
+                int newCost = calculateDistance(neighbour);
+            
+                if (newCost < currenCost) {
+                    this.bestSolution = neighbour;
+                    currenCost = newCost;
+                    improvement = true;
+                    newSolution = true;
+                }
+            }
+            currenCost = calculateDistance(bestSolution);
+        }
+        if (newSolution) {
+            Solution solution = new Solution(this.bestSolution, currenCost);
+            this.queue.add(solution);
+        }
+    }
+
 
     public ArrayList<List<Umpire>> generateNeighborhood() {
         ArrayList<List<Umpire>> neighborhood = new ArrayList<>();
@@ -47,12 +83,6 @@ public class LocalSearch {
                         // Swap
                         newAssignment.get(umpire.id).matches.set(i, tempMatch);
                         newAssignment.get(otherUmpire.id).matches.set(i, currentMatches.get(i));
-                        
-                        // tempCheck(newAssignment);
-                        // System.out.println(teller + "-------------");
-                        // teller += 1;
-                        // System.out.println(" ");
-
                         neighborhood.add(newAssignment);
                     }
                 }
@@ -75,44 +105,17 @@ public class LocalSearch {
     }
 
 
-    public boolean search(int currentDistance) {
-        boolean improvement = true;
-        boolean newSolution = false;
-        
-        while (improvement) {
-            improvement = false;
-            ArrayList<List<Umpire>> neighborhood = generateNeighborhood();
-            // int currenCost = calculateCost(bestSolution);
-            int currenCost = currentDistance;
-
-            for (List<Umpire> neighbour: neighborhood) {
-                int newCost = calculateCost(neighbour);
-            
-                if (newCost < currenCost) {
-                    this.bestSolution = neighbour;
-                    currenCost = newCost;
-                    improvement = false;
-                    newSolution = true;
-                }
-            }
-        }
-        return newSolution;
-    }
-
-
-    public int calculateCost(List<Umpire> assignment) {
-        int cost = 0;
-        for (Umpire umpire: assignment) {
+    public int calculateDistance(List<Umpire> solution) {
+        int distance = 0;
+        for (Umpire umpire: solution) {
             for (int i=1; i<umpire.matches.size(); i++) {
                 Match currentMatch = umpire.matches.get(i);
                 Match prevMatch = umpire.matches.get(i - 1);
 
-                int deltaD = Main.dist[prevMatch.homeTeam.teamId][currentMatch.homeTeam.teamId];
-                cost += deltaD; 
+                distance += Main.dist[prevMatch.homeTeam.teamId][currentMatch.homeTeam.teamId];
             }
         }
-
-        return cost;
+        return distance;
     }
 
 
@@ -169,6 +172,12 @@ public class LocalSearch {
             }
         }
         return feasible;
+    }
+
+
+    @Override
+    public void run() {
+        search();
     }
 
 

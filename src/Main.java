@@ -2,9 +2,9 @@ import java.io.*;
 import java.util.*;
 public class Main {
     // https://benchmark.gent.cs.kuleuven.be/tup/en/results/
-    static int q1 = 5;
+    static int q1 = 7;
     static int q2 = 2;
-    static String file = "umps10";
+    static String file = "umps12";
     static int n;
     static int nTeams;
     static int nRounds;
