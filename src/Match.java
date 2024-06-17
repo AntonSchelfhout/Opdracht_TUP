@@ -5,7 +5,6 @@ public class Match{
     public int round;
     public Team homeTeam;
     public Team outTeam;
-    public int index;
 
     public List<Umpire> feasibleUmpires = new ArrayList<>();
 
@@ -13,14 +12,12 @@ public class Match{
         this.round = round;
         this.homeTeam = homeTeam;
         this.outTeam = outTeam;
-        this.index = index;
     }
 
     public Match(Match other, List<Umpire> umpires){
         this.round = other.round;
         this.homeTeam = other.homeTeam;
         this.outTeam = other.outTeam;
-        this.index = other.index;
 
         this.feasibleUmpires = new ArrayList<>(umpires);
     }
@@ -51,7 +48,7 @@ public class Match{
             Match u2LastMatch = u2.matches.getLast();
             int d1 = Main.dist[u1LastMatch.homeTeam.teamId][homeTeam.teamId];
             int d2 = Main.dist[u2LastMatch.homeTeam.teamId][homeTeam.teamId];
-            return d2 - d1;
+            return d1 - d2;
         });
     }
 
@@ -59,7 +56,6 @@ public class Match{
     public String toString() {
         return "Match{" +
                 "round=" + round +
-                ", index=" + index +
                 ", homeTeam=" + homeTeam +
                 ", outTeam=" + outTeam +
                 '}';

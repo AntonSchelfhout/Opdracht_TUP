@@ -62,7 +62,7 @@ public class FastBranchAndBound implements Runnable {
         Match match = problem.matches.get(matchIndex);
         Round round = problem.rounds.get(match.round - startRound);
 
-        // FOR SOME REASON SORTING RESULTS IN DOUBLE THE VISITED NODES?
+        // Don't activate, Enabling this sort umpires from the closest to the farthest, but has delay so not usefull in lowerbounds
         //match.sortFeasibleUmpires();
     
         umpireLoop: for(Umpire u: match.feasibleUmpires) { 
@@ -76,6 +76,17 @@ public class FastBranchAndBound implements Runnable {
                 currentDistance -= u.removeFromMatch();
                 continue umpireLoop;
             }
+
+            // Don't activate, If numOfRounds is more than half of the total rounds, check if all teams are visited, delay not usefull 
+            // if(numOfRounds > (Main.nRounds - Main.nTeams)) {
+            //     int teamsNeedToVisit = Main.nRounds - numOfRounds;
+            //     int roundsLeft = endRound - (round.index + 1);
+            //     int teamsNotVisited = u.getTeamsNotVisited();
+            //     if(teamsNotVisited - teamsNeedToVisit > roundsLeft){
+            //         currentDistance -= u.removeFromMatch();
+            //         continue umpireLoop;
+            //     }
+            // }
 
             // If not all matches are assigned umpires
             Set<Match> adjustedMatches = new HashSet<>();

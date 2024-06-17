@@ -2,9 +2,9 @@ import java.io.*;
 import java.util.*;
 public class Main {
     // https://benchmark.gent.cs.kuleuven.be/tup/en/results/
-    static int q1 = 5;
+    static int q1 = 7;
     static int q2 = 2;
-    static String file = "umps10";
+    static String file = "umps12";
     static int n;
     static int nTeams;
     static int nRounds;
@@ -94,7 +94,7 @@ public class Main {
         for(int[] opponentsRound: opponents) {
             // Create a list of matches for this round (skip the returning negative matches)
             List<Match> roundMatches = new ArrayList<>();
-
+            
             for(int i = 0; i < opponentsRound.length; i++) {
                 int o = opponentsRound[i];
                 if(o < 0) continue;
@@ -116,14 +116,14 @@ public class Main {
         int[][] md = new int[nRounds][n];
         for(int i = 1; i < nRounds; i++){
             for(int j = 0; j < n; j++){
-                Match matchRound1 = matches.get(n*i+j);
+                Match toMatch = matches.get(n*i+j);
                 int minDist = Integer.MAX_VALUE;
                 for(int k = 0; k < n; k++){
-                    Match matchRound2 = matches.get(n*(i-1)+k);
-                    if(matchRound1.homeTeam.teamId == matchRound2.homeTeam.teamId || matchRound1.outTeam == matchRound2.outTeam || matchRound1.homeTeam == matchRound2.outTeam || matchRound1.outTeam == matchRound2.homeTeam){
+                    Match fromMatch = matches.get(n*(i-1)+k);
+                    if(toMatch.homeTeam.teamId == fromMatch.homeTeam.teamId || toMatch.outTeam == fromMatch.outTeam || toMatch.homeTeam == fromMatch.outTeam || toMatch.outTeam == fromMatch.homeTeam){
                         continue;
                     }
-                    minDist = Math.min(minDist, dist[matchRound2.homeTeam.teamId][matchRound1.homeTeam.teamId]);
+                    minDist = Math.min(minDist, dist[fromMatch.homeTeam.teamId][toMatch.homeTeam.teamId]);
                 }
 
                 for(int k = 0; k < j; k++){

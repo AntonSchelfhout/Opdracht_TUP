@@ -38,8 +38,10 @@ public class Round{
 
     public boolean checkSameRound(Umpire u, Match m){
         boolean res = true;
-        for(Match match : matches){
-            if(!match.equals(m) && match.index > m.index){
+        int index = matches.indexOf(m);
+        for(int i = index + 1; i < matches.size(); i++){
+            Match match = matches.get(i);
+            if(!match.equals(m)){
                 res &= !match.isEmptyAfterRemove(u);
             }
         }
@@ -69,11 +71,11 @@ public class Round{
 
     public HashSet<Match> adjustSameRound(Umpire u, Match m){
         HashSet<Match> res = new HashSet<>();
-        for(Match match : matches){
-            if(!match.equals(m) && match.index > m.index){
-                if(match.removeFeasibleUmpire(u)){
-                    res.add(match);
-                }
+        int index = matches.indexOf(m);
+        for(int i = index + 1; i < matches.size(); i++){
+            Match match = matches.get(i);
+            if(!match.equals(m) && match.removeFeasibleUmpire(u)){
+                res.add(match);
             }
         }
         return res;
@@ -104,6 +106,7 @@ public class Round{
         }
         return res;
     }
+
 
     @Override
     public String toString() {

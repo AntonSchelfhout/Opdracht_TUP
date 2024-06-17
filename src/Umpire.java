@@ -68,6 +68,18 @@ public class Umpire{
         return notVisitedTeams;
     }
 
+    public int getTeamsVisited(){
+        // Check if it is possible to visit all teams in the remaining rounds
+        int numVisitedTeams = 0;
+        for(int i = 0; i < Main.nTeams; i++){
+            if(visitedTeams[i] > 0){
+                numVisitedTeams++;
+            }
+        }
+
+        return numVisitedTeams;
+    }
+
     @Override
     public String toString() {
         return "Umpire{" +

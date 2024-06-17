@@ -63,8 +63,9 @@ public class BranchAndBound implements Runnable {
         Match match = problem.matches.get(matchIndex);
         Round round = problem.rounds.get(match.round);
 
-        // FOR SOME REASON SORTING RESULTS IN DOUBLE THE VISITED NODES?
-        // match.sortFeasibleUmpires();
+        // Sorting feasible umpires on distance from last match
+        // TODO SORT MORE EFFICIENTLY
+        match.sortFeasibleUmpires();
 
         umpireLoop: for(Umpire u: match.feasibleUmpires){ 
 
@@ -170,7 +171,8 @@ public class BranchAndBound implements Runnable {
         int[][] formattedSolution = new int[Main.nRounds][Main.n];
         for(Umpire u: solutions){
             for(Match m: u.matches){
-                formattedSolution[m.round][m.index] = u.id;
+                int index = problem.rounds.get(m.round).matches.indexOf(m);
+                formattedSolution[m.round][index] = u.id;
             }
         }
 
