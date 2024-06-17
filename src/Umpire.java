@@ -7,6 +7,8 @@ public class Umpire{
     public List<Match> matches = new ArrayList<>();
     public int[] visitedTeams = new int[Main.nTeams];
 
+    public Umpire() {}
+
     public Umpire(int id) {
         this.id = id;
         this.visitedTeams = new int[Main.nTeams];
@@ -15,6 +17,11 @@ public class Umpire{
     public Umpire(Umpire other) {
         this.id = other.id;
         this.matches = new ArrayList<>(other.matches);
+        this.visitedTeams = other.visitedTeams.clone();
+    }
+
+    public Umpire(Umpire other, boolean placeholder) {
+        this.id = other.id;
         this.visitedTeams = other.visitedTeams.clone();
     }
 
