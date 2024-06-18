@@ -121,16 +121,16 @@ public class Main {
                 // Get the distances to all other matches in the previous round
                 int minDist = Integer.MAX_VALUE;
                 for(int k = 0; k < n; k++){
-                    Match matchRound2 = matches.get(n*(i-1)+k);
+                    Match fromMatch = matches.get(n*(i-1)+k);
 
                     // Umpires can't visit matches with the same team twice in a row thus we skip these
-                    if(toMatch.homeTeam.teamId == matchRound2.homeTeam.teamId || toMatch.outTeam == matchRound2.outTeam || toMatch.homeTeam == matchRound2.outTeam || toMatch.outTeam == matchRound2.homeTeam){
+                    if(toMatch.homeTeam.teamId == fromMatch.homeTeam.teamId || toMatch.outTeam == fromMatch.outTeam || toMatch.homeTeam == fromMatch.outTeam || toMatch.outTeam == fromMatch.homeTeam){
                         continue;
                     }
 
-                    toMatch.addMinDistanceMatch(matchRound2);
+                    toMatch.addMinDistanceMatch(fromMatch);
 
-                    int d = dist[matchRound2.homeTeam.teamId][toMatch.homeTeam.teamId];
+                    int d = dist[fromMatch.homeTeam.teamId][toMatch.homeTeam.teamId];
                     minDist = Math.min(minDist, d);
                 }
 

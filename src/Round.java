@@ -115,9 +115,13 @@ public class Round{
     //     });
     // }
 
-    public void adjustMinimumDistances(Match m){
+    public void adjustMinimumDistances(Umpire u, Match m){
         for(int i = 0; i < matches.size(); i++){
+            // If umpire u isn't in the feasible umpires of the match, we don't need to adjust the minimum distances
             Match match = matches.get(i);
+            if(!match.feasibleUmpires.contains(u)){
+                continue;
+            }
             match.removeMinDistanceMatch(m);
         }
     }

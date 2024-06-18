@@ -133,7 +133,7 @@ public class BranchAndBound implements Runnable {
 
                 // Remove match from next round 
                 if(round.index < Main.nRounds - 1){
-                    problem.rounds.get(round.index + 1).adjustMinimumDistances(match);
+                    problem.rounds.get(round.index + 1).adjustMinimumDistances(u, match);
                 }
 
                 // Branch and bound to next match
