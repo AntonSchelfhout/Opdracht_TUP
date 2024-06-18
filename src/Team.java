@@ -3,12 +3,35 @@ import java.util.List;
 
 public class Team {
     public int teamId;
-    // List of all upmires that still need to visit this Team
-    // public List<Umpire> umpiresToVisit = new ArrayList<>();
+    public List<Match> umpiresToVisit;
+
+    public List<Match> awayMatches = new ArrayList<>();
+    public List<Match> homeMatches = new ArrayList<>();
 
     public Team(int id) {
         this.teamId = id;
-        // umpiresToVisit = Main.umpires;
+    }
+
+    public ArrayList<Match> getHomeMatchesAfterRound(Umpire u, Round r) {
+        int roundIndex = r.index;
+
+        // Get all home matches after this round
+        ArrayList<Match> homeMatches = new ArrayList<>();
+        for(int i = r.matches.size() - 1; i >= 0; i--) {
+            Match m = r.matches.get(i);
+
+            if(!m.feasibleUmpires.contains(u) || m.claimMatch != null) {
+                continue;
+            }
+
+            homeMatches.add(m);
+
+            if(m.round <= roundIndex) {
+                break;
+            }
+        }
+
+        return homeMatches;
     }
 
     @Override

@@ -6,6 +6,7 @@ public class Match{
     public Team homeTeam;
     public Team outTeam;
 
+    public Umpire claimMatch = null;
     public List<Umpire> feasibleUmpires = new ArrayList<>();
 
     public Match(int round, Team homeTeam, Team outTeam, int index){
@@ -50,6 +51,14 @@ public class Match{
             int d2 = Main.dist[u2LastMatch.homeTeam.teamId][homeTeam.teamId];
             return d1 - d2;
         });
+    }
+
+    public void claimMatch(Umpire u){
+        claimMatch = u;
+    }
+
+    public void unclaimMatch(){
+        claimMatch = null;
     }
 
     @Override

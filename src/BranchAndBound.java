@@ -1,7 +1,3 @@
-import java.net.MalformedURLException;
-
-// class with all the operations for the branch and bound
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -64,7 +60,6 @@ public class BranchAndBound implements Runnable {
         Round round = problem.rounds.get(match.round);
 
         // Sorting feasible umpires on distance from last match
-        // TODO SORT MORE EFFICIENTLY
         match.sortFeasibleUmpires();
 
         umpireLoop: for(Umpire u: match.feasibleUmpires){ 
@@ -81,11 +76,10 @@ public class BranchAndBound implements Runnable {
                 continue umpireLoop;
             }
 
-            // TODO: even when a umpire can't do all rounds now, like if it's the last round and i still need to visit 2 more teams,
-            // then we know that we must visit that team now and in the next round also, so just lock both of them in already
+            // Prune if connect visiting all teams is not possible
             int roundsLeft = Main.nRounds - (round.index + 1);
-            int teamsNotVisited = u.getTeamsNotVisited();
-            if(teamsNotVisited > roundsLeft){
+            ArrayList<Integer> teamsNotVisited = u.getTeamsNotVisited();
+            if(teamsNotVisited.size() > roundsLeft){
                 currentDistance -= u.removeFromMatch();
                 continue umpireLoop;
             }
@@ -94,6 +88,7 @@ public class BranchAndBound implements Runnable {
 
             // If not all matches are assigned umpires
             Set<Match> adjustedMatches = new HashSet<>();
+            Set<Match> claimedMatches = new HashSet<>();
             if(matchIndex < problem.matches.size()-1){
 
                 // Check constraints
@@ -130,6 +125,32 @@ public class BranchAndBound implements Runnable {
                     adjustedMatches.addAll(m);
                 }
 
+                // Fix teams
+                if(round.index < Main.nRounds - Main.q2){
+                    for(int i = 0; i < teamsNotVisited.size(); i++){
+                        int teamId = teamsNotVisited.get(i);
+                        Team team = problem.teams.get(teamId);
+    
+                        ArrayList<Match> homeMatches = team.getHomeMatchesAfterRound(u, round);
+                        // if(homeMatches.size() == 0){
+                        //     currentDistance -= u.removeFromMatch();
+                        //     for(Match m: adjustedMatches){
+                        //         m.addFeasibleUmpire(u);
+                        //     }
+                        //     for(Match m: claimedMatches){
+                        //         m.unclaimMatch();
+                        //     }
+                        //     continue umpireLoop;
+                        // }
+                        if(homeMatches.size() == 1){
+                            Match homeMatch = homeMatches.get(0);
+                            homeMatch.claimMatch(u);
+                            claimedMatches.add(homeMatch);
+                        }
+                    }
+                }
+                
+
                 // Branch and bound to next match
                 branch(matchIndex+1);
                 
@@ -142,9 +163,6 @@ public class BranchAndBound implements Runnable {
                         continue umpireLoop;
                     }
                 }
-
-                // TODO Localsearch when we have a solution that is feasible and better, maybe in other thread?
-                
 
                 // Check if current distance is less than upper bound
                 if(currentDistance < upperBound){
@@ -161,7 +179,9 @@ public class BranchAndBound implements Runnable {
             currentDistance -= u.removeFromMatch();
             for(Match m: adjustedMatches){
                 m.addFeasibleUmpire(u);
-
+            }
+            for(Match m: claimedMatches){
+                m.unclaimMatch();
             }
         }
     }

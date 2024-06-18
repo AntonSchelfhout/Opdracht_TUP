@@ -21,7 +21,6 @@ public class Main {
         // Create the lower problem deep copy
         Problem lowerProblem = problem.clone();
 
-        // TODO Preprocessing, remove unfeasible edges (see paper)
         long startTime = System.currentTimeMillis();
 
         // Start thread for lowerbounds
@@ -100,6 +99,11 @@ public class Main {
                 if(o < 0) continue;
 
                 Match m = new Match(round, teams.get(i), teams.get(o - 1), roundMatches.size());
+
+                // Set home and out teams
+                teams.get(i).homeMatches.add(m);
+                teams.get(o - 1).awayMatches.add(m);
+
                 roundMatches.add(m);
                 matches.add(m);
             }
