@@ -32,16 +32,23 @@ public class Problem implements Cloneable{
             newUmpires.add(new Umpire(u));
         }
 
-        // Duplicate all matches 
+        // Duplicate all matches
         for(Match m : matches) {
             newMatches.add(new Match(m, newUmpires));
         }
-        
+
         // Duplicate all rounds
         for(Round r : rounds) {
             newRounds.add(new Round(r, newMatches));
         }
 
         return new Problem(newRounds, newMatches, newUmpires, teams);
+    }
+
+    public Problem cloneSubset(List<Round> roundsSubset, List<Match> matchesSubset) {
+        Problem problem = new Problem(roundsSubset, matchesSubset, umpires, teams);
+        problem = problem.clone();
+
+        return problem;
     }
 }
