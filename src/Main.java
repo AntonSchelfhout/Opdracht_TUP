@@ -94,7 +94,7 @@ public class Main {
         for(int[] opponentsRound: opponents) {
             // Create a list of matches for this round (skip the returning negative matches)
             List<Match> roundMatches = new ArrayList<>();
-            
+
             for(int i = 0; i < opponentsRound.length; i++) {
                 int o = opponentsRound[i];
                 if(o < 0) continue;
@@ -117,15 +117,25 @@ public class Main {
         for(int i = 1; i < nRounds; i++){
             for(int j = 0; j < n; j++){
                 Match toMatch = matches.get(n*i+j);
+
+                // Get the distances to all other matches in the previous round
                 int minDist = Integer.MAX_VALUE;
                 for(int k = 0; k < n; k++){
-                    Match fromMatch = matches.get(n*(i-1)+k);
-                    if(toMatch.homeTeam.teamId == fromMatch.homeTeam.teamId || toMatch.outTeam == fromMatch.outTeam || toMatch.homeTeam == fromMatch.outTeam || toMatch.outTeam == fromMatch.homeTeam){
+                    Match matchRound2 = matches.get(n*(i-1)+k);
+
+                    // Umpires can't visit matches with the same team twice in a row thus we skip these
+                    if(toMatch.homeTeam.teamId == matchRound2.homeTeam.teamId || toMatch.outTeam == matchRound2.outTeam || toMatch.homeTeam == matchRound2.outTeam || toMatch.outTeam == matchRound2.homeTeam){
                         continue;
                     }
-                    minDist = Math.min(minDist, dist[fromMatch.homeTeam.teamId][toMatch.homeTeam.teamId]);
+
+                    toMatch.addMinDistanceMatch(matchRound2);
+
+                    int d = dist[matchRound2.homeTeam.teamId][toMatch.homeTeam.teamId];
+                    minDist = Math.min(minDist, d);
                 }
 
+                toMatch.minDistance = minDist;
+                
                 for(int k = 0; k < j; k++){
                     md[i][k] += minDist;
                 }

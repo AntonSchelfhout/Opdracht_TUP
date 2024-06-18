@@ -60,11 +60,10 @@ public class BranchAndBound implements Runnable {
     }
     
     public void branch(int matchIndex) {
-        Match match = problem.matches.get(matchIndex);
-        Round round = problem.rounds.get(match.round);
-
+        Round round = problem.rounds.get(matchIndex / Main.n);
+        Match match = round.matches.get(matchIndex % Main.n);
+        
         // Sorting feasible umpires on distance from last match
-        // TODO SORT MORE EFFICIENTLY
         match.sortFeasibleUmpires();
 
         umpireLoop: for(Umpire u: match.feasibleUmpires){ 
@@ -75,7 +74,7 @@ public class BranchAndBound implements Runnable {
 
             // Prune if current distance is already greater than upper bound
             // Partial matching
-            int partialDistance = Main.minimalDistances[round.index][matchIndex % Main.n];
+            int partialDistance = round.getPartialDistance(match);
             if(currentDistance + partialDistance + lowerBound.lowerBounds[round.index][Main.nRounds - 1] >= upperBound) {
                 currentDistance -= u.removeFromMatch();
                 continue umpireLoop;
@@ -83,6 +82,8 @@ public class BranchAndBound implements Runnable {
 
             // TODO: even when a umpire can't do all rounds now, like if it's the last round and i still need to visit 2 more teams,
             // then we know that we must visit that team now and in the next round also, so just lock both of them in already
+            // ALSO can see in advance if we can still visit all teams more, look in another thread with team combinations will lead
+            // to a valid solution?
             int roundsLeft = Main.nRounds - (round.index + 1);
             int teamsNotVisited = u.getTeamsNotVisited();
             if(teamsNotVisited > roundsLeft){
@@ -128,6 +129,11 @@ public class BranchAndBound implements Runnable {
                     Round r = problem.rounds.get(i);
                     HashSet<Match> m = r.adjustSecondConstraint(u, match);
                     adjustedMatches.addAll(m);
+                }
+
+                // Remove match from next round 
+                if(round.index < Main.nRounds - 1){
+                    problem.rounds.get(round.index + 1).adjustMinimumDistances(match);
                 }
 
                 // Branch and bound to next match

@@ -71,7 +71,7 @@ public class FastBranchAndBound implements Runnable {
             currentDistance += u.addToMatch(match);
 
             // Prune if current distance is already greater than upper bound
-            int partialDistance = Main.minimalDistances[round.index][matchIndex % Main.n];
+            int partialDistance = round.getPartialDistance(match);
             if(currentDistance + partialDistance + lowerBound.lowerBounds[round.index][endRound] >= upperBound) {  
                 currentDistance -= u.removeFromMatch();
                 continue umpireLoop;

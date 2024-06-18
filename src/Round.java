@@ -107,6 +107,31 @@ public class Round{
         return res;
     }
 
+    // public void sortMatches(){
+    //     matches.sort((m1, m2) -> {
+    //         int d1 = m1.minDistance.distance;
+    //         int d2 = m2.minDistance.distance;
+    //         return d1 - d2;
+    //     });
+    // }
+
+    public void adjustMinimumDistances(Match m){
+        for(int i = 0; i < matches.size(); i++){
+            Match match = matches.get(i);
+            match.removeMinDistanceMatch(m);
+        }
+    }
+
+    public int getPartialDistance(Match fromMatch){
+        int index = matches.indexOf(fromMatch);
+        int partialDistance = 0;
+        for(int i = index + 1; i < matches.size(); i++){
+            Match match = matches.get(i);
+            partialDistance += match.getMinDistance();
+        }
+        return partialDistance;
+    }
+
 
     @Override
     public String toString() {
