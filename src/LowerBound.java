@@ -4,6 +4,7 @@
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -66,12 +67,12 @@ public class LowerBound implements Runnable{
         // initial lower bounds for all pairs of rounds
         for(int r=Main.nRounds-2; r>=0; r--) {
             HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm();
-            
+
             int[][] matrix = createMatrix(r);
 
             int[][] result = hungarianAlgorithm.computeAssignments(matrix);
             int afstand = calculateDistance(result, r);
-            
+
             for(int r2=r+1; r2 < Main.nRounds; r2++) {
                 this.lowerBounds[r][r2] = afstand + lowerBounds[r+1][r2];
             }
@@ -84,7 +85,7 @@ public class LowerBound implements Runnable{
             int r = Main.nRounds - 1 - k; // start round
 
             List<Future<?>> futures = new ArrayList<>();
-            
+
             // Run all these in parallel
             while (r >= 1) {
                 final int startRound = r;
@@ -99,22 +100,21 @@ public class LowerBound implements Runnable{
                         List<Match> matchSubset = problem.matches.subList(r0 * Main.n, (endRound + 1) * Main.n);
                         Problem problemSubset = problem.cloneSubset(roundsSubset, matchSubset);
 
-                        // Create a new FastBranchAndBound task
-                        FastBranchAndBound branchAndBound = new FastBranchAndBound(this, r0, endRound, problemSubset);
-                        branchAndBound.run();
+                         // Create a new FastBranchAndBound task
+                         FastBranchAndBound branchAndBound = new FastBranchAndBound(this, round, endRound, problemSubset);
+                         branchAndBound.run();
 
-                        solutions[r0][endRound] = branchAndBound.getTotalDistance();
-                        for(int r1 = r0; r1 >= 0; r1--) {
-                            for (int r2 = endRound; r2 < Main.nRounds; r2++) {
-                                lowerBounds[r1][r2] = Math.max(lowerBounds[r1][r2], lowerBounds[r1][r0] + solutions[r0][endRound] + lowerBounds[endRound][r2]);
-                            }
-                        }
-                    }
-                }));
+                         solutions[round][endRound] = branchAndBound.getTotalDistance();
+                         for (int r1 = round; r1 >= 0; r1--) {
+                             for (int r2 = endRound; r2 < Main.nRounds; r2++) {
+                                 lowerBounds[r1][r2] = Math.max(lowerBounds[r1][r2], lowerBounds[r1][round] + solutions[round][endRound] + lowerBounds[endRound][r2]);
+                             }
+                         }
+                     });
 
                 r -= k;
             }
-            
+
             // Wait for all tasks to complete
             for (Future<?> future : futures) {
                 try {
@@ -125,8 +125,79 @@ public class LowerBound implements Runnable{
             }
         }
 
-        executor.shutdown();
-    }
+         // Clear he executors after use
+         for (ExecutorService executor : executors) {
+             executor.shutdown();
+         }
+
+     }
+
+
+//    public void calculateLowerBounds() {
+//        // initial lower bounds for all pairs of rounds
+//        for(int r=Main.nRounds-2; r>=0; r--) {
+//            HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm();
+//
+//            int[][] matrix = createMatrix(r);
+//
+//            int[][] result = hungarianAlgorithm.computeAssignments(matrix);
+//            int afstand = calculateDistance(result, r);
+//
+//            for(int r2=r+1; r2 < Main.nRounds; r2++) {
+//                this.lowerBounds[r][r2] = afstand + lowerBounds[r+1][r2];
+//            }
+//        }
+//
+//        // Calculate lower bounds for bigger subproblems
+//        ExecutorService executor = Executors.newFixedThreadPool(Main.nRounds); // Two threads for parallel execution
+//
+//        for(int k = 2; k < Main.nRounds; k++) { // size of the subproblem+1
+//            int r = Main.nRounds - 1 - k; // start round
+//
+//            List<Future<?>> futures = new ArrayList<>();
+//
+//            // Run all these in parallel
+//            while (r >= 1) {
+//                final int startRound = r;
+//                final int endRound = r + k;
+//
+//                futures.add(executor.submit(() -> {
+//                    for (int r0 = endRound - 2; r0 >= startRound; r0--) {
+//                        if (solutions[r0][endRound] != 0) continue;
+//
+//                        // Get subset of rounds and matches
+//                        List<Round> roundsSubset = problem.rounds.subList(r0, endRound + 1);
+//                        List<Match> matchSubset = problem.matches.subList(r0 * Main.n, (endRound + 1) * Main.n);
+//                        Problem problemSubset = problem.cloneSubset(roundsSubset, matchSubset);
+//
+//                        // Create a new FastBranchAndBound task
+//                        FastBranchAndBound branchAndBound = new FastBranchAndBound(this, r0, endRound, problemSubset);
+//                        branchAndBound.run();
+//
+//                        solutions[r0][endRound] = branchAndBound.getTotalDistance();
+//                        for(int r1 = r0; r1 >= 0; r1--) {
+//                            for (int r2 = endRound; r2 < Main.nRounds; r2++) {
+//                                lowerBounds[r1][r2] = Math.max(lowerBounds[r1][r2], lowerBounds[r1][r0] + solutions[r0][endRound] + lowerBounds[endRound][r2]);
+//                            }
+//                        }
+//                    }
+//                }));
+//
+//                r -= k;
+//            }
+//
+//            // Wait for all tasks to complete
+//            for (Future<?> future : futures) {
+//                try {
+//                    future.get();
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        }
+//
+//        executor.shutdown();
+//    }
 
     @Override
     public void run() {

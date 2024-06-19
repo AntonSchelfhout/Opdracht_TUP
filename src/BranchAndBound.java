@@ -16,7 +16,9 @@ public class BranchAndBound {
     
     Problem problem;
 
-    int checkedNodes = 0;
+    List<Umpire> solutions;
+
+    long checkedNodes = 0;
 
     public BranchAndBound(LowerBound lowerBound, Problem problem) {
         this.lowerBound = lowerBound;
