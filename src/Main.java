@@ -4,6 +4,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 public class Main {
     // https://benchmark.gent.cs.kuleuven.be/tup/en/results/
     static int q1 = 7;
@@ -17,7 +19,7 @@ public class Main {
     static Problem problem;
     static int[][] minimalDistances; // matrix containing the minimal umpire distances for all rounds
 
-    static int totalNodes = 0;
+    static AtomicLong totalNodes = new AtomicLong(0);
     static int upperBound = Integer.MAX_VALUE;
     static List<Umpire> solutions = new ArrayList<>();
 
@@ -40,22 +42,21 @@ public class Main {
         Thread.sleep(50);
         
         // Start N new thread for branching
-        ExecutorService[] executors = new ExecutorService[n];
-        Future<?>[] futures = new Future[n];
-        for(int i = 0; i < n; i++) {
-            executors[i] = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-        }
-        for(int i = 0; i < n; i++){
+        ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        List<Future<?>> futures = new ArrayList<>();
+        for(int i = 0; i < n - 2; i++){
             final int index = i;
             Problem clone = problem.clone();
             BranchAndBound branchAndBound = new BranchAndBound(lowerBound, clone);
-            futures[i] = executors[i].submit(() -> totalNodes += branchAndBound.startBranching(index));
+            futures.add(executorService.submit(() -> totalNodes.addAndGet(branchAndBound.startBranching(index))));
         }
 
         // Wait for all threads to finish 
-        for(int i = 0; i < n; i++){
-            futures[i].get();
+        for(Future<?> future : futures){
+            future.get();
         }
+
+        executorService.shutdown();
 
 
         // Print finished results

@@ -25,7 +25,7 @@ public class BranchAndBound {
         this.problem = problem;
     }
 
-    public int startBranching(int u) {
+    public long startBranching(int u) {
         long startTime = System.currentTimeMillis();
 
         // Fix the first round
@@ -48,12 +48,7 @@ public class BranchAndBound {
 
         // Fix the u'th umpire in the second round
         Match match = problem.matches.get(Main.n);
-        Umpire umpire = problem.umpires.get(u);
-
-        if(!match.feasibleUmpires.contains(umpire)){
-            System.out.println("ABORD");
-            return 0;
-        }
+        Umpire umpire = match.feasibleUmpires.get(u);
 
         currentDistance += umpire.addToMatch(match);
         problem.rounds.get(1).adjustSameRound(umpire, match);
@@ -71,7 +66,7 @@ public class BranchAndBound {
 
         long endTime = System.currentTimeMillis();
         long totalTime = endTime - startTime;
-        System.out.println("BRANCHNG: " + totalTime + "");
+        System.out.println("BRANCHNG: " + totalTime + " " + u);
 
         return checkedNodes;
     }
