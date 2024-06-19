@@ -25,7 +25,7 @@ public class BranchAndBound {
         this.problem = problem;
     }
 
-    public int startBranching(int u) {
+    public long startBranching(int u) {
         long startTime = System.currentTimeMillis();
 
         // Fix the first round
@@ -92,7 +92,7 @@ public class BranchAndBound {
             // Prune if current distance is already greater than upper bound
             // Partial matching
             int partialDistance = Main.minimalDistances[round.index][matchIndex % Main.n];
-            if(currentDistance + partialDistance + lowerBound.lowerBounds[round.index][Main.nRounds - 1] >= Main.upperBound) {
+            if(currentDistance + partialDistance + Main.lowerBounds[round.index][Main.nRounds - 1] >= Main.upperBound) {
                 currentDistance -= u.removeFromMatch();
                 continue umpireLoop;
             }

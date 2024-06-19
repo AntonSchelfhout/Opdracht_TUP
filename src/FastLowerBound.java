@@ -10,12 +10,12 @@
     import java.util.concurrent.Future;
     import java.lang.Thread;
     
-    public class LowerBound implements Runnable{
+    public class FastLowerBound implements Runnable{
     
         Problem problem;
         long startTime = System.currentTimeMillis();
     
-        public LowerBound(Problem problem) {
+        public FastLowerBound(Problem problem) {
             Main.lowerboundsSolutions = new int[Main.nRounds][Main.nRounds];
             Main.lowerBounds = new int[Main.nRounds][Main.nRounds];
     
@@ -82,7 +82,6 @@
            for(int k = 2; k < Main.nRounds; k++) { // size of the subproblem+1
                int r = Main.nRounds - 1 - k; // start round
     
-               List<Future<?>> futures = new ArrayList<>();
     
                // Run all these in parallel
                while (r >= 1) {
@@ -92,14 +91,13 @@
                         final int endRound = r + k;
                         final int round = r0;
     
-                        futures.add(executor.submit(() -> {
                             // Get subset of rounds and matches
                             List<Round> roundsSubset = problem.rounds.subList(round, endRound + 1);
                             List<Match> matchSubset = problem.matches.subList(round * Main.n, (endRound + 1) * Main.n);
                             Problem problemSubset = problem.cloneSubset(roundsSubset, matchSubset);
     
                             // Create a new FastBranchAndBound task
-                            FastBranchAndBound branchAndBound = new FastBranchAndBound(this, round, endRound, problemSubset);
+                            FastestBranchAndBound branchAndBound = new FastestBranchAndBound(this, round, endRound, problemSubset);
                             branchAndBound.run();
     
                             Main.lowerboundsSolutions[round][endRound] = branchAndBound.getTotalDistance();
@@ -108,20 +106,12 @@
                                     Main.lowerBounds[r1][r2] = Math.max(Main.lowerBounds[r1][r2], Main.lowerBounds[r1][round] + Main.lowerboundsSolutions[round][endRound] + Main.lowerBounds[endRound][r2]);
                                 }
                             }
-                        }));
                     }
     
                    r -= k;
                }
     
-               // Wait for all tasks to complete
-               for (Future<?> future : futures) {
-                   try {
-                       future.get();
-                   } catch (Exception e) {
-                       e.printStackTrace();
-                   }
-               }
+            
            }
     
            executor.shutdown();

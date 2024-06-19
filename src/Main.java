@@ -16,8 +16,10 @@ public class Main {
 
     static Problem problem;
     static int[][] minimalDistances; // matrix containing the minimal umpire distances for all rounds
+    public static int[][] lowerboundsSolutions;       // matrix containing the values of solutions for the subproblems
+    public static int[][] lowerBounds;     // matrix containing the lower bounds for all pairs of rounds
 
-    static int totalNodes = 0;
+    static long totalNodes = 0;
     static int upperBound = Integer.MAX_VALUE;
     static List<Umpire> solutions = new ArrayList<>();
 
@@ -26,17 +28,20 @@ public class Main {
         // Read the file
         problem = readFile(file); 
 
-        // Create the lower problem deep copy
-        Problem lowerProblem = problem.clone();
-
         long startTime = System.currentTimeMillis();
 
-        // Start thread for lowerbounds
-        LowerBound lowerBound = new LowerBound(lowerProblem);
-        Thread lowerBounds = new Thread(lowerBound);
-        lowerBounds.start();
+        Problem fastLowerProblem = problem.clone();
+        LowerBound fastLowerBound = new LowerBound(fastLowerProblem);
+        Thread fastLowerBoundThread = new Thread(fastLowerBound);
+        fastLowerBoundThread.start();
 
-        // Small X mseconds delay to make sure the lower bounds are calculated
+        // Start thread for lowerbounds
+        Problem lowerProblem = problem.clone();
+        LowerBound lowerBound = new LowerBound(lowerProblem);
+        Thread lowerBoundThread = new Thread(lowerBound);
+        lowerBoundThread.start();
+
+        // Small X mseconds delay to make sure some lower bounds are calculated
         Thread.sleep(50);
         
         // Start N new thread for branching
@@ -70,7 +75,7 @@ public class Main {
         // Print lower bounds
         for (int i=0; i<nRounds; i++) {
             for (int j=0; j<nRounds; j++) {
-                System.out.print(lowerBound.lowerBounds[i][j] + " ");
+                System.out.print(lowerBounds[i][j] + " ");
             }
             System.out.println();
         }
@@ -151,6 +156,9 @@ public class Main {
             }
         }
         minimalDistances = md;
+
+        lowerboundsSolutions = new int[Main.nRounds][Main.nRounds];
+        lowerBounds = new int[Main.nRounds][Main.nRounds];
 
         return new Problem(rounds, matches, umpires, teams);
     }
