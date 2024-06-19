@@ -19,7 +19,7 @@ public class BranchAndBound implements Runnable {
 
     List<Umpire> solutions;
 
-    int checkedNodes = 0;
+    long checkedNodes = 0;
 
     public BranchAndBound(LowerBound lowerBound, Problem problem) {
         this.lowerBound = lowerBound;
