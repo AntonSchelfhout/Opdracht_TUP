@@ -6,10 +6,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.lang.Thread;
 import java.util.concurrent.Future;
+import java.lang.Thread;
 
- public class LowerBound implements Runnable{
+public class LowerBound implements Runnable{
     public int[][] solutions;       // matrix containing the values of solutions for the subproblems
     public int[][] lowerBounds;     // matrix containing the lower bounds for all pairs of rounds
 
@@ -62,17 +62,16 @@ import java.util.concurrent.Future;
         return cost;
     }
 
-
     public void calculateLowerBounds() {
         // initial lower bounds for all pairs of rounds
         for(int r=Main.nRounds-2; r>=0; r--) {
             HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm();
-
+            
             int[][] matrix = createMatrix(r);
 
             int[][] result = hungarianAlgorithm.computeAssignments(matrix);
             int afstand = calculateDistance(result, r);
-
+            
             for(int r2=r+1; r2 < Main.nRounds; r2++) {
                 this.lowerBounds[r][r2] = afstand + lowerBounds[r+1][r2];
             }
@@ -85,7 +84,7 @@ import java.util.concurrent.Future;
             int r = Main.nRounds - 1 - k; // start round
 
             List<Future<?>> futures = new ArrayList<>();
-
+            
             // Run all these in parallel
             while (r >= 1) {
                 final int startRound = r;
@@ -115,7 +114,7 @@ import java.util.concurrent.Future;
 
                 r -= k;
             }
-
+            
             // Wait for all tasks to complete
             for (Future<?> future : futures) {
                 try {

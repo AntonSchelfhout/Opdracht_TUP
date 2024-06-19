@@ -1,5 +1,9 @@
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 public class Main {
     // https://benchmark.gent.cs.kuleuven.be/tup/en/results/
     static int q1 = 7;
@@ -13,7 +17,11 @@ public class Main {
     static Problem problem;
     static int[][] minimalDistances; // matrix containing the minimal umpire distances for all rounds
 
-    public static void main(String[] args) throws FileNotFoundException, InterruptedException {
+    static int totalNodes = 0;
+    static int upperBound = Integer.MAX_VALUE;
+    static List<Umpire> solutions = new ArrayList<>();
+
+    public static void main(String[] args) throws FileNotFoundException, InterruptedException, ExecutionException {
 
         // Read the file
         problem = readFile(file); 
@@ -21,7 +29,6 @@ public class Main {
         // Create the lower problem deep copy
         Problem lowerProblem = problem.clone();
 
-        // TODO Preprocessing, remove unfeasible edges (see paper)
         long startTime = System.currentTimeMillis();
 
         // Start thread for lowerbounds
@@ -29,16 +36,27 @@ public class Main {
         Thread lowerBounds = new Thread(lowerBound);
         lowerBounds.start();
 
-        // Small X seconds delay to make sure the lower bounds are calculated
+        // Small X mseconds delay to make sure the lower bounds are calculated
         Thread.sleep(50);
         
-        // Start new thread for branching
-        BranchAndBound branchAndBound = new BranchAndBound(lowerBound, problem);
-        Thread branching = new Thread(branchAndBound);
-        branching.start();
+        // Start N new thread for branching
+        ExecutorService[] executors = new ExecutorService[n];
+        Future<?>[] futures = new Future[n];
+        for(int i = 0; i < n; i++) {
+            executors[i] = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        }
+        for(int i = 0; i < n; i++){
+            final int index = i;
+            Problem clone = problem.clone();
+            BranchAndBound branchAndBound = new BranchAndBound(lowerBound, clone);
+            futures[i] = executors[i].submit(() -> totalNodes += branchAndBound.startBranching(index));
+        }
 
-        // Wait for the threads to finish
-        branching.join();
+        // Wait for all threads to finish 
+        for(int i = 0; i < n; i++){
+            futures[i].get();
+        }
+
 
         // Print finished results
         long endTime = System.currentTimeMillis();
@@ -46,7 +64,8 @@ public class Main {
         System.out.println("Total runtime branch and bound: " + totalTime + " milliseconds");
 
         // Print the results
-        branchAndBound.feasibilityCheck();
+        System.out.println("Upper bound: " + upperBound);
+        feasibilityCheck();
 
         // Print lower bounds
         for (int i=0; i<nRounds; i++) {
@@ -153,5 +172,130 @@ public class Main {
             }
         }
         return null;
+    }
+
+    public static void feasibilityCheck(){
+        // Generating matrix
+        int[][] formattedSolution = new int[Main.nRounds][Main.n];
+        for(Umpire u: solutions){
+            for(Match m: u.matches){
+                int index = problem.rounds.get(m.round).matches.indexOf(m);
+                formattedSolution[m.round][index] = u.id;
+            }
+        }
+
+        // Check if a umpire doesn't go to 2 or more matches at the same time
+        for(int i = 0; i < Main.nRounds; i++){
+            for(int j = 0; j < Main.n; j++){
+                for(int k = j + 1; k < Main.n; k++){
+                    if(formattedSolution[i][j] == formattedSolution[i][k]){
+                        System.out.println("ERROR: Umpire " + formattedSolution[i][j] + " goes to match " + j + " and " + k + " at the same time");
+                    }
+                }
+            }
+        }
+
+        // Check if a umpire visits every team's home once
+        for(Umpire u : solutions) {
+            int[] visitedTeams = new int[Main.nTeams];
+            for(int i = 0; i < Main.nRounds; i++) {
+                Match m = u.matches.get(i);
+                visitedTeams[m.homeTeam.teamId] = 1;
+            }
+
+            for(int i = 0; i < Main.nTeams; i++) {
+                if(visitedTeams[i] == 0) {
+                    System.out.println("ERROR: Umpire " + u.id + " does not visit team " + i + "'s home");
+                }
+            }
+        }
+        
+        // Check Q1 constraint, same location not visited
+        for(Umpire u : solutions) {
+            for(int i = 0; i < Main.nRounds; i++) {
+                Match m1 = u.matches.get(i);
+
+                for(int j = i + 1; j < Main.q1 - 1; j++) {
+                    Match m2 = u.matches.get(j);
+
+                    if(m1 == m2) continue;
+
+                    if(m1.homeTeam.teamId == m2.homeTeam.teamId) {
+                        System.out.println("ERROR: Umpire " + u.id + " visits same location in Q1 in round " + i);
+                    }
+                }
+            }
+        }
+
+        // Check Q2 constraint, teams not visited 
+        for(Umpire u : solutions) {
+            for(int i = 0; i < Main.nRounds; i++) {
+                Match m1 = u.matches.get(i);
+                int homeTeam1 = m1.homeTeam.teamId;
+                int outTeam1 = m1.outTeam.teamId;
+
+                for(int j = i + 1; j < Main.q2 - 1; j++) {
+                    Match m2 = u.matches.get(i);
+
+                    if(m1 == m2) continue;
+
+                    int homeTeam2 = m2.homeTeam.teamId;
+                    int outTeam2 = m2.outTeam.teamId;
+
+                    if(homeTeam1 == homeTeam2 || homeTeam1 == outTeam2 || outTeam1 == homeTeam2 || outTeam1 == outTeam2){
+                        System.out.println("ERROR: Umpire " + u.id + " hosts same team in Q2 in round " + i);
+                    }
+                }
+            }
+        }
+
+        // Create validator output
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < Main.nRounds; i++) {
+            for (int j = 0; j < Main.n; j++) {
+                sb.append(formattedSolution[i][j] + 1);
+                if (j < Main.n - 1) {
+                    sb.append(",");
+                }
+            }
+            if (i < Main.nRounds - 1) {
+                sb.append(",");
+            }
+        }
+        String result = sb.toString();
+
+        // Create output.txt for validator
+        try {
+            java.io.FileWriter myWriter = new java.io.FileWriter("output.txt");
+            myWriter.write(result);
+            myWriter.close();
+        } catch (Exception e) {
+            System.out.println("An error occurred.");
+            e.printStackTrace();
+        }   
+
+        // Run validator
+        String command = "java -jar validator.jar Input/"+ Main.file +".txt "+ Main.q1+" "+ Main.q2 + " output.txt";
+        try {
+            executeCommand(command);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    private static void executeCommand(String command) throws IOException {
+        Process process = Runtime.getRuntime().exec(command);
+
+        // Read output
+        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            System.out.println("--------------------");
+            System.out.println("Nodes: " + totalNodes);
+            System.out.println("Our distance: " + upperBound);
+            System.out.println(line);
+            System.out.println("--------------------");
+        }
     }
 }

@@ -10,14 +10,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class BranchAndBound implements Runnable {
-    int upperBound = Integer.MAX_VALUE;
+public class BranchAndBound {
     int currentDistance = 0;
     LowerBound lowerBound;
     
     Problem problem;
-
-    List<Umpire> solutions;
 
     int checkedNodes = 0;
 
@@ -26,8 +23,7 @@ public class BranchAndBound implements Runnable {
         this.problem = problem;
     }
 
-    @Override
-    public void run() {
+    public int startBranching(int u) {
         long startTime = System.currentTimeMillis();
 
         // Fix the first round
@@ -48,15 +44,34 @@ public class BranchAndBound implements Runnable {
             }
         }
 
-        branch(Main.n);
+        // Fix the u'th umpire in the second round
+        Match match = problem.matches.get(Main.n);
+        Umpire umpire = problem.umpires.get(u);
+
+        if(!match.feasibleUmpires.contains(umpire)){
+            System.out.println("ABORD");
+            return 0;
+        }
+
+        currentDistance += umpire.addToMatch(match);
+        problem.rounds.get(1).adjustSameRound(umpire, match);
+        for(int j = 2; j < Main.q1; j++){
+            Round round = problem.rounds.get(j);
+            round.adjustFirstConstraint(umpire, match);
+        }
+        for(int j = 2; j < Main.q2; j++){
+            Round round = problem.rounds.get(j);
+            round.adjustSecondConstraint(umpire, match);
+        }
+
+
+        branch(Main.n + 1);
 
         long endTime = System.currentTimeMillis();
         long totalTime = endTime - startTime;
         System.out.println("BRANCHNG: " + totalTime + "");
-    }
 
-    public int getTotalDistance() {
-        return upperBound;
+        return checkedNodes;
     }
     
     public void branch(int matchIndex) {
@@ -64,7 +79,6 @@ public class BranchAndBound implements Runnable {
         Round round = problem.rounds.get(match.round);
 
         // Sorting feasible umpires on distance from last match
-        // TODO SORT MORE EFFICIENTLY
         match.sortFeasibleUmpires();
 
         umpireLoop: for(Umpire u: match.feasibleUmpires){ 
@@ -76,13 +90,12 @@ public class BranchAndBound implements Runnable {
             // Prune if current distance is already greater than upper bound
             // Partial matching
             int partialDistance = Main.minimalDistances[round.index][matchIndex % Main.n];
-            if(currentDistance + partialDistance + lowerBound.lowerBounds[round.index][Main.nRounds - 1] >= upperBound) {
+            if(currentDistance + partialDistance + lowerBound.lowerBounds[round.index][Main.nRounds - 1] >= Main.upperBound) {
                 currentDistance -= u.removeFromMatch();
                 continue umpireLoop;
             }
 
-            // TODO: even when a umpire can't do all rounds now, like if it's the last round and i still need to visit 2 more teams,
-            // then we know that we must visit that team now and in the next round also, so just lock both of them in already
+            // Prune if we can't visit all rounds anymore
             int roundsLeft = Main.nRounds - (round.index + 1);
             int teamsNotVisited = u.getTeamsNotVisited();
             if(teamsNotVisited > roundsLeft){
@@ -143,16 +156,16 @@ public class BranchAndBound implements Runnable {
                     }
                 }
 
-                // TODO Localsearch when we have a solution that is feasible and better, maybe in other thread?
-                
-
                 // Check if current distance is less than upper bound
-                if(currentDistance < upperBound){
-                    upperBound = currentDistance;
-
-                    solutions = new ArrayList<>();
-                    for(Umpire umpire: problem.umpires){
-                        solutions.add(new Umpire(umpire));
+                synchronized(this) {
+                    if(currentDistance < Main.upperBound){
+                        Main.upperBound = currentDistance;
+    
+                        Main.solutions = new ArrayList<>();
+                        for(Umpire umpire: problem.umpires){
+                            Main.solutions.add(new Umpire(umpire));
+                        }
+                        Main.problem = problem;
                     }
                 }
             }
@@ -163,131 +176,6 @@ public class BranchAndBound implements Runnable {
                 m.addFeasibleUmpire(u);
 
             }
-        }
-    }
-
-    public void feasibilityCheck(){
-        // Generating matrix
-        int[][] formattedSolution = new int[Main.nRounds][Main.n];
-        for(Umpire u: solutions){
-            for(Match m: u.matches){
-                int index = problem.rounds.get(m.round).matches.indexOf(m);
-                formattedSolution[m.round][index] = u.id;
-            }
-        }
-
-        // Check if a umpire doesn't go to 2 or more matches at the same time
-        for(int i = 0; i < Main.nRounds; i++){
-            for(int j = 0; j < Main.n; j++){
-                for(int k = j + 1; k < Main.n; k++){
-                    if(formattedSolution[i][j] == formattedSolution[i][k]){
-                        System.out.println("ERROR: Umpire " + formattedSolution[i][j] + " goes to match " + j + " and " + k + " at the same time");
-                    }
-                }
-            }
-        }
-
-        // Check if a umpire visits every team's home once
-        for(Umpire u : solutions) {
-            int[] visitedTeams = new int[Main.nTeams];
-            for(int i = 0; i < Main.nRounds; i++) {
-                Match m = u.matches.get(i);
-                visitedTeams[m.homeTeam.teamId] = 1;
-            }
-
-            for(int i = 0; i < Main.nTeams; i++) {
-                if(visitedTeams[i] == 0) {
-                    System.out.println("ERROR: Umpire " + u.id + " does not visit team " + i + "'s home");
-                }
-            }
-        }
-        
-        // Check Q1 constraint, same location not visited
-        for(Umpire u : solutions) {
-            for(int i = 0; i < Main.nRounds; i++) {
-                Match m1 = u.matches.get(i);
-
-                for(int j = i + 1; j < Main.q1 - 1; j++) {
-                    Match m2 = u.matches.get(j);
-
-                    if(m1 == m2) continue;
-
-                    if(m1.homeTeam.teamId == m2.homeTeam.teamId) {
-                        System.out.println("ERROR: Umpire " + u.id + " visits same location in Q1 in round " + i);
-                    }
-                }
-            }
-        }
-
-        // Check Q2 constraint, teams not visited 
-        for(Umpire u : solutions) {
-            for(int i = 0; i < Main.nRounds; i++) {
-                Match m1 = u.matches.get(i);
-                int homeTeam1 = m1.homeTeam.teamId;
-                int outTeam1 = m1.outTeam.teamId;
-
-                for(int j = i + 1; j < Main.q2 - 1; j++) {
-                    Match m2 = u.matches.get(i);
-
-                    if(m1 == m2) continue;
-
-                    int homeTeam2 = m2.homeTeam.teamId;
-                    int outTeam2 = m2.outTeam.teamId;
-
-                    if(homeTeam1 == homeTeam2 || homeTeam1 == outTeam2 || outTeam1 == homeTeam2 || outTeam1 == outTeam2){
-                        System.out.println("ERROR: Umpire " + u.id + " hosts same team in Q2 in round " + i);
-                    }
-                }
-            }
-        }
-
-        // Create validator output
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < Main.nRounds; i++) {
-            for (int j = 0; j < Main.n; j++) {
-                sb.append(formattedSolution[i][j] + 1);
-                if (j < Main.n - 1) {
-                    sb.append(",");
-                }
-            }
-            if (i < Main.nRounds - 1) {
-                sb.append(",");
-            }
-        }
-        String result = sb.toString();
-
-        // Create output.txt for validator
-        try {
-            java.io.FileWriter myWriter = new java.io.FileWriter("output.txt");
-            myWriter.write(result);
-            myWriter.close();
-        } catch (Exception e) {
-            System.out.println("An error occurred.");
-            e.printStackTrace();
-        }   
-
-        // Run validator
-        String command = "java -jar validator.jar Input/"+ Main.file +".txt "+ Main.q1+" "+ Main.q2 + " output.txt";
-        try {
-            executeCommand(command);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-
-    private void executeCommand(String command) throws IOException {
-        Process process = Runtime.getRuntime().exec(command);
-
-        // Read output
-        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-        String line;
-        while ((line = reader.readLine()) != null) {
-            System.out.println("--------------------");
-            System.out.println("Nodes: " + checkedNodes);
-            System.out.println("Our distance: " + upperBound);
-            System.out.println(line);
-            System.out.println("--------------------");
         }
     }
 }
