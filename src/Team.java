@@ -16,22 +16,22 @@ public class Team {
         int roundIndex = r.index;
 
         // Get all home matches after this round
-        ArrayList<Match> homeMatches = new ArrayList<>();
-        for(int i = r.matches.size() - 1; i >= 0; i--) {
-            Match m = r.matches.get(i);
+        ArrayList<Match> hm = new ArrayList<>();
+        for(int i = homeMatches.size() - 1; i >= 0; i--) {
+            Match m = homeMatches.get(i);
 
             if(!m.feasibleUmpires.contains(u) || m.claimMatch != null) {
                 continue;
             }
 
-            homeMatches.add(m);
-
             if(m.round <= roundIndex) {
                 break;
             }
+
+            hm.add(m);
         }
 
-        return homeMatches;
+        return hm;
     }
 
     @Override

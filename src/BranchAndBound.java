@@ -15,7 +15,7 @@ public class BranchAndBound implements Runnable {
 
     List<Umpire> solutions;
 
-    int checkedNodes = 0;
+    long checkedNodes = 0;
 
     public BranchAndBound(LowerBound lowerBound, Problem problem) {
         this.lowerBound = lowerBound;
@@ -64,6 +64,10 @@ public class BranchAndBound implements Runnable {
 
         umpireLoop: for(Umpire u: match.feasibleUmpires){ 
 
+            if(match.claimMatch != null && match.claimMatch != u){
+                continue;
+            }
+
             // Assign umpire to match
             int addDistance = u.addToMatch(match);
             currentDistance += addDistance;
@@ -72,14 +76,6 @@ public class BranchAndBound implements Runnable {
             // Partial matching
             int partialDistance = Main.minimalDistances[round.index][matchIndex % Main.n];
             if(currentDistance + partialDistance + lowerBound.lowerBounds[round.index][Main.nRounds - 1] >= upperBound) {
-                currentDistance -= u.removeFromMatch();
-                continue umpireLoop;
-            }
-
-            // Prune if connect visiting all teams is not possible
-            int roundsLeft = Main.nRounds - (round.index + 1);
-            ArrayList<Integer> teamsNotVisited = u.getTeamsNotVisited();
-            if(teamsNotVisited.size() > roundsLeft){
                 currentDistance -= u.removeFromMatch();
                 continue umpireLoop;
             }
@@ -126,44 +122,34 @@ public class BranchAndBound implements Runnable {
                 }
 
                 // Fix teams
-                if(round.index < Main.nRounds - Main.q2){
-                    for(int i = 0; i < teamsNotVisited.size(); i++){
-                        int teamId = teamsNotVisited.get(i);
-                        Team team = problem.teams.get(teamId);
-    
-                        ArrayList<Match> homeMatches = team.getHomeMatchesAfterRound(u, round);
-                        // if(homeMatches.size() == 0){
-                        //     currentDistance -= u.removeFromMatch();
-                        //     for(Match m: adjustedMatches){
-                        //         m.addFeasibleUmpire(u);
-                        //     }
-                        //     for(Match m: claimedMatches){
-                        //         m.unclaimMatch();
-                        //     }
-                        //     continue umpireLoop;
-                        // }
-                        if(homeMatches.size() == 1){
-                            Match homeMatch = homeMatches.get(0);
-                            homeMatch.claimMatch(u);
-                            claimedMatches.add(homeMatch);
-                        }
+                ArrayList<Integer> teamsNotVisited = u.getTeamsNotVisited();
+                for(int i = 0; i < teamsNotVisited.size(); i++){
+                    int teamId = teamsNotVisited.get(i);
+                    Team team = problem.teams.get(teamId);
+
+                    ArrayList<Match> homeMatches = team.getHomeMatchesAfterRound(u, round);
+                    // if(homeMatches.size() == 0){
+                    //     currentDistance -= u.removeFromMatch();
+                    //     for(Match m: adjustedMatches){
+                    //         m.addFeasibleUmpire(u);
+                    //     }
+                    //     for(Match m: claimedMatches){
+                    //         m.unclaimMatch();
+                    //     }
+                    //     continue umpireLoop;
+                    // } 
+                    if(homeMatches.size() == 1){
+                        Match homeMatch = homeMatches.get(0);
+                        homeMatch.claimMatch(u);
+                        claimedMatches.add(homeMatch);
                     }
                 }
                 
-
                 // Branch and bound to next match
                 branch(matchIndex+1);
                 
             }  
             else{
-                // Check if each umpire visited each team's home -> sum visitedTeams has to be size teams for each umpire
-                for(Umpire umpire: problem.umpires){
-                    if(!umpire.checkAllVisited()) {
-                        currentDistance -= u.removeFromMatch();
-                        continue umpireLoop;
-                    }
-                }
-
                 // Check if current distance is less than upper bound
                 if(currentDistance < upperBound){
                     upperBound = currentDistance;
