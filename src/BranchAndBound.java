@@ -52,11 +52,11 @@ public class BranchAndBound {
 
         currentDistance += umpire.addToMatch(match);
         problem.rounds.get(1).adjustSameRound(umpire, match);
-        for(int j = 2; j < Main.q1; j++){
+        for(int j = 2; j < Main.q1 + 1; j++){
             Round round = problem.rounds.get(j);
             round.adjustFirstConstraint(umpire, match);
         }
-        for(int j = 2; j < Main.q2; j++){
+        for(int j = 2; j < Main.q2 + 1; j++){
             Round round = problem.rounds.get(j);
             round.adjustSecondConstraint(umpire, match);
         }
