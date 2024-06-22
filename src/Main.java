@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class Main {
     static int q1 = 7;
     static int q2 = 2;
-    static String file = "umps12";
+    static String file = "umps14";
     static int n;
     static int nTeams;
     static int nRounds;
@@ -21,24 +21,29 @@ public class Main {
     static AtomicLong totalNodes = new AtomicLong(0);
     static int upperBound = Integer.MAX_VALUE;
     static List<Umpire> solutions = new ArrayList<>();
+      // matrix containing the values of solutions for the subproblems
+    public static int[][] lowerBounds;     // matrix containing the lower bounds for all pairs of rounds
 
     public static void main(String[] args) throws FileNotFoundException, InterruptedException, ExecutionException {
 
         // Read the file
         problem = readFile(file); 
 
-        // Create the lower problem deep copy
-        Problem lowerProblem = problem.clone();
-
         long startTime = System.currentTimeMillis();
 
+        Problem fastLowerProblem = problem.clone();
+        FastLowerBound fastLowerBound = new FastLowerBound(fastLowerProblem);
+        Thread fastLowerBoundThread = new Thread(fastLowerBound);
+        fastLowerBoundThread.start();
+
         // Start thread for lowerbounds
+        Problem lowerProblem = problem.clone();
         LowerBound lowerBound = new LowerBound(lowerProblem);
-        Thread lowerBounds = new Thread(lowerBound);
-        lowerBounds.start();
+        Thread lowerBoundThread = new Thread(lowerBound);
+        lowerBoundThread.start();
 
         // Small X mseconds delay to make sure the lower bounds are calculated
-        Thread.sleep(50);
+        Thread.sleep(1000);
         
         // Start N new thread for branching
         ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
@@ -62,18 +67,19 @@ public class Main {
         long endTime = System.currentTimeMillis();
         long totalTime = endTime - startTime;
         System.out.println("Total runtime branch and bound: " + totalTime + " milliseconds");
-
-        // Print the results
         System.out.println("Upper bound: " + upperBound);
-        feasibilityCheck();
+        System.out.println("Total nodes: " + totalNodes);
 
         // Print lower bounds
+        System.out.println("Lower bounds: ");
         for (int i=0; i<nRounds; i++) {
             for (int j=0; j<nRounds; j++) {
-                System.out.print(lowerBound.lowerBounds[i][j] + " ");
+                System.out.print(lowerBounds[i][j] + " ");
             }
             System.out.println();
         }
+
+        // feasibilityCheck();
     }
 
     public static Problem readFile(String file) throws FileNotFoundException {

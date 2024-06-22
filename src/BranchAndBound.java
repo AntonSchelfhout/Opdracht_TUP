@@ -52,11 +52,11 @@ public class BranchAndBound {
 
         currentDistance += umpire.addToMatch(match);
         problem.rounds.get(1).adjustSameRound(umpire, match);
-        for(int j = 2; j < Main.q1; j++){
+        for(int j = 2; j < Main.q1 + 1; j++){
             Round round = problem.rounds.get(j);
             round.adjustFirstConstraint(umpire, match);
         }
-        for(int j = 2; j < Main.q2; j++){
+        for(int j = 2; j < Main.q2 + 1; j++){
             Round round = problem.rounds.get(j);
             round.adjustSecondConstraint(umpire, match);
         }
@@ -66,7 +66,7 @@ public class BranchAndBound {
 
         long endTime = System.currentTimeMillis();
         long totalTime = endTime - startTime;
-        System.out.println("BRANCHNG: " + totalTime + " " + u);
+        // System.out.println("BRANCHNG: " + totalTime + " " + u);
 
         return checkedNodes;
     }
@@ -87,7 +87,7 @@ public class BranchAndBound {
             // Prune if current distance is already greater than upper bound
             // Partial matching
             int partialDistance = Main.minimalDistances[round.index][matchIndex % Main.n];
-            if(currentDistance + partialDistance + lowerBound.lowerBounds[round.index][Main.nRounds - 1] >= Main.upperBound) {
+            if(currentDistance + partialDistance + Main.lowerBounds[round.index][Main.nRounds - 1] >= Main.upperBound) {
                 currentDistance -= u.removeFromMatch();
                 continue umpireLoop;
             }
@@ -157,12 +157,13 @@ public class BranchAndBound {
                 synchronized(this) {
                     if(currentDistance < Main.upperBound){
                         Main.upperBound = currentDistance;
-    
-                        Main.solutions = new ArrayList<>();
-                        for(Umpire umpire: problem.umpires){
-                            Main.solutions.add(new Umpire(umpire));
-                        }
-                        Main.problem = problem;
+                        
+                        // System.out.println("NEW UPPER BOUND: " + Main.upperBound);
+                        // Main.solutions = new ArrayList<>();
+                        // for(Umpire umpire: problem.umpires){
+                        //     Main.solutions.add(new Umpire(umpire));
+                        // }
+                        // Main.problem = problem;
                     }
                 }
             }

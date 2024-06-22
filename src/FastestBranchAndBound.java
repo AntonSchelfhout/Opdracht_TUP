@@ -8,7 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class FastBranchAndBound implements Runnable {
+public class FastestBranchAndBound implements Runnable {
     int upperBound = Integer.MAX_VALUE;
     int currentDistance = 0;
 
@@ -16,11 +16,11 @@ public class FastBranchAndBound implements Runnable {
     int endRound = 0;
     int numOfRounds = 0;
 
-    LowerBound lowerBound;
+    FastLowerBound lowerBound;
    
     Problem problem;
 
-    public FastBranchAndBound(LowerBound lowerBound, int startRound, int endRound, Problem problem) {    
+    public FastestBranchAndBound(FastLowerBound lowerBound, int startRound, int endRound, Problem problem) {    
         this.lowerBound = lowerBound;
         this.startRound = startRound;
         this.endRound = endRound;
@@ -62,9 +62,6 @@ public class FastBranchAndBound implements Runnable {
         Match match = problem.matches.get(matchIndex);
         Round round = problem.rounds.get(match.round - startRound);
 
-        // Don't activate, Enabling this sort umpires from the closest to the farthest, but has delay so not usefull in lowerbounds
-        //match.sortFeasibleUmpires();
-    
         umpireLoop: for(Umpire u: match.feasibleUmpires) { 
 
             // Assign umpire to match
@@ -77,19 +74,11 @@ public class FastBranchAndBound implements Runnable {
                 continue umpireLoop;
             }
 
-            // Don't activate, If numOfRounds is more than half of the total rounds, check if all teams are visited, delay not usefull 
-            // if(numOfRounds > (Main.nRounds - Main.nTeams)) {
-            //     int teamsNeedToVisit = Main.nRounds - numOfRounds;
-            //     int roundsLeft = endRound - (round.index + 1);
-            //     int teamsNotVisited = u.getTeamsNotVisited();
-            //     if(teamsNotVisited - teamsNeedToVisit > roundsLeft){
-            //         currentDistance -= u.removeFromMatch();
-            //         continue umpireLoop;
-            //     }
-            // }
-
             // If not all matches are assigned umpires
             Set<Match> adjustedMatches = new HashSet<>();
+
+            int X = 1;
+
             if(matchIndex < problem.matches.size() - 1) {
                 
                 // === CHECKS === 
@@ -99,8 +88,8 @@ public class FastBranchAndBound implements Runnable {
                     continue umpireLoop;
                 }
                 
-                // Check Q1
-                for(int i = round.index - startRound + 1; i < problem.rounds.size() && i <= round.index - startRound + Main.q1 - 1; i++){
+                // // Check Q1
+                for(int i = round.index - startRound + 1; i < problem.rounds.size() && i <= round.index - startRound + Main.q1 - 1 - X; i++){
                     Round r = problem.rounds.get(i);
                     if(!r.checkFirstConstraint(u, match)){
                         currentDistance -= u.removeFromMatch();
@@ -108,8 +97,8 @@ public class FastBranchAndBound implements Runnable {
                     }
                 }
 
-                // Check Q2
-                for(int i = round.index - startRound + 1; i < problem.rounds.size() && i <= round.index - startRound + Main.q2 - 1; i++){
+                // // Check Q2
+                for(int i = round.index - startRound + 1; i < problem.rounds.size() && i <= round.index - startRound + Main.q2 - 1 - X; i++){
                     Round r = problem.rounds.get(i);
                     if(!r.checkSecondConstraint(u, match)){
                         currentDistance -= u.removeFromMatch();
@@ -117,19 +106,19 @@ public class FastBranchAndBound implements Runnable {
                     }
                 }
 
-                // === COMMIT CHANGES === 
-                // Remove selected umpire form other matches feasible umpires
+                // // === COMMIT CHANGES === 
+                // // Remove selected umpire form other matches feasible umpires
                 adjustedMatches = round.adjustSameRound(u, match);
 
-                // Adjust the fesaible umpires for the next Q1 rounds
-                for(int i = round.index - startRound + 1; i < problem.rounds.size() && i <= round.index - startRound + Main.q1 - 1; i++){
+                // // Adjust the fesaible umpires for the next Q1 rounds
+                for(int i = round.index - startRound + 1; i < problem.rounds.size() && i <= round.index - startRound + Main.q1 - 1 - X; i++){
                     Round r = problem.rounds.get(i);
                     HashSet<Match> m = r.adjustFirstConstraint(u, match);
                     adjustedMatches.addAll(m);
                 }
                 
-                // Adjust the fesaible umpires for the next Q2 rounds
-                for(int i = round.index - startRound + 1; i < problem.rounds.size() && i <= round.index - startRound + Main.q2 - 1; i++){
+                // // Adjust the fesaible umpires for the next Q2 rounds
+                for(int i = round.index - startRound + 1; i < problem.rounds.size() && i <= round.index - startRound + Main.q2 - 1 - X; i++){
                     Round r = problem.rounds.get(i);
                     HashSet<Match> m = r.adjustSecondConstraint(u, match);
                     adjustedMatches.addAll(m);

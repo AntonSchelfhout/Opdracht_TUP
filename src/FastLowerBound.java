@@ -10,14 +10,14 @@
     import java.util.concurrent.Future;
     import java.lang.Thread;
     
-    public class LowerBound implements Runnable{
+    public class FastLowerBound implements Runnable{
     
         Problem problem;
         long startTime = System.currentTimeMillis();
 
         public int[][] lowerboundsSolutions; 
     
-        public LowerBound(Problem problem) {
+        public FastLowerBound(Problem problem) {
             lowerboundsSolutions = new int[Main.nRounds][Main.nRounds];
             Main.lowerBounds = new int[Main.nRounds][Main.nRounds];
     
@@ -81,10 +81,9 @@
            // Calculate lower bounds for bigger subproblems
            ExecutorService executor = Executors.newFixedThreadPool(Main.nRounds); // Two threads for parallel execution
     
-           for(int k = 2; k < Main.nRounds; k++) { // size of the subproblem+1
+           for(int k = Main.nRounds / 2; k < Main.nRounds; k++) { // size of the subproblem+1
                int r = Main.nRounds - 1 - k; // start round
     
-               List<Future<?>> futures = new ArrayList<>();
     
                // Run all these in parallel
                while (r >= 1) {
@@ -94,38 +93,29 @@
                         final int endRound = r + k;
                         final int round = r0;
     
-                        futures.add(executor.submit(() -> {
                             // Get subset of rounds and matches
                             List<Round> roundsSubset = problem.rounds.subList(round, endRound + 1);
                             List<Match> matchSubset = problem.matches.subList(round * Main.n, (endRound + 1) * Main.n);
                             Problem problemSubset = problem.cloneSubset(roundsSubset, matchSubset);
     
                             // Create a new FastBranchAndBound task
-                            FastBranchAndBound branchAndBound = new FastBranchAndBound(this, round, endRound, problemSubset);
+                            FastestBranchAndBound branchAndBound = new FastestBranchAndBound(this, round, endRound, problemSubset);
                             branchAndBound.run();
     
                             lowerboundsSolutions[round][endRound] = branchAndBound.getTotalDistance();
                             for(int r1 = round; r1 >= 0; r1--) {
-                                for (int r2 = endRound; r2 < Main.nRounds; r2++) {
+                                for(int r2 = endRound; r2 < Main.nRounds; r2++) {
                                     synchronized(Main.lowerBounds) {
                                         Main.lowerBounds[r1][r2] = Math.max(Main.lowerBounds[r1][r2], Main.lowerBounds[r1][round] + lowerboundsSolutions[round][endRound] + Main.lowerBounds[endRound][r2]);
                                     }
                                 }
                             }
-                        }));
                     }
     
                    r -= k;
                }
     
-               // Wait for all tasks to complete
-               for (Future<?> future : futures) {
-                   try {
-                       future.get();
-                   } catch (Exception e) {
-                       e.printStackTrace();
-                   }
-               }
+            
            }
     
            executor.shutdown();
